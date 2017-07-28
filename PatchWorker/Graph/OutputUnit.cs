@@ -22,6 +22,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Transonic.MIDI;
+using Transonic.MIDI.Engine;
+
 namespace PatchWorker.Graph
 {
     public class OutputUnit : PatchUnit
@@ -42,12 +45,12 @@ namespace PatchWorker.Graph
         }
 
         //instead of sending msg to next unit in patch, we send it to the output device
-        public override void processShortMsg(MidiShortMsg msg)
+        public override void processMidiMsg(Message msg)
         {
             if (outDev != null)
             {
                 Console.WriteLine("OUTPUT UNIT: sending msg to output device " + outDev.devName);
-                outDev.sendShortMsg(msg);
+                outDev.sendMessage(msg.getDataBytes());                    
             }
             else
             {
@@ -57,10 +60,9 @@ namespace PatchWorker.Graph
 
         public void sendProgramChange(int progNum)
         {
-            byte b1 = (byte)(0xC0 | channelNum);
-            byte b2 = (byte)(progNum & 0x7f);
-            MidiShortMsg msg = new MidiShortMsg(b1, b2, 0x00, 0);
-            processShortMsg(msg);
+            byte b1 = (byte)(progNum & 0x7f);
+            PatchChangeMessage msg = new PatchChangeMessage(channelNum, b1);
+            processMidiMsg(msg);
         }
 
     }

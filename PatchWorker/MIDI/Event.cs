@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
-Patchworker : a midi patchbay
-Copyright (C) 2005-2017  George E Greaney
+Transonic MIDI Library
+Copyright (C) 1995-2017  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,24 +22,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Transonic.MIDI;
-using Transonic.MIDI.Engine;
-
-namespace PatchWorker.Graph
+namespace Transonic.MIDI
 {
-    public class ModifierUnit : PatchUnit
+    public class Event
     {
-        //no special cons here
-        public ModifierUnit(PatchWorker _patchworker, UnitData _udata)
-            : base(_patchworker, _udata)
+        public uint time;
+        public Message msg;
+
+        public Event(uint _time, Message _msg)
         {
+            time = _time;       //time in ticks
+            msg = _msg;         //midi message
         }
 
-        //just call parent method - for now
-        public override void processMidiMsg(Message msg)
+        public void dump()
         {
-            base.processMidiMsg(msg);
+            Console.WriteLine("time = {0}, msg = {1}", time, msg);
         }
 
     }
+    
 }

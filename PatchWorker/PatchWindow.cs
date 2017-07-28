@@ -28,6 +28,8 @@ using System.Windows.Forms;
 using PatchWorker.UI;
 using PatchWorker.Graph;
 
+using Transonic.MIDI.Engine;
+
 namespace PatchWorker
 {
     public partial class PatchWindow : Form
@@ -190,7 +192,7 @@ namespace PatchWorker
 
         private void helpAboutMenuItem_Click(object sender, EventArgs e)
         {
-            String msg = "Patchworker\nversion 1.0.0\n" + 
+            String msg = "Patchworker\nversion 1.1.0\n" + 
                 "\xA9 Transonic Software 1997-2017\n" + 
                 "http://transonic.kohoutech.com";
             MessageBox.Show(msg, "About");

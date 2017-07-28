@@ -71,18 +71,27 @@
     <Compile Include="Graph\ModifierUnit.cs" />
     <Compile Include="Graph\OutputUnit.cs" />
     <Compile Include="Graph\PatchCord.cs" />
+    <Compile Include="Graph\PatchUnit.cs" />
     <Compile Include="Graph\UnitData.cs" />
+    <Compile Include="MIDI\Engine\IMidiView.cs" />
+    <Compile Include="MIDI\Engine\InputDevice.cs" />
+    <Compile Include="MIDI\Engine\MidiSystem.cs" />
+    <Compile Include="MIDI\Engine\MidiTimer.cs" />
+    <Compile Include="MIDI\Engine\OutputDevice.cs" />
+    <Compile Include="MIDI\Engine\Transport.cs" />
+    <Compile Include="MIDI\Event.cs" />
+    <Compile Include="MIDI\Message.cs" />
+    <Compile Include="MIDI\MidiFile.cs" />
+    <Compile Include="MIDI\Sequence.cs" />
+    <Compile Include="MIDI\Track.cs" />
     <Compile Include="PatchWindow.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="PatchWindow.Designer.cs">
       <DependentUpon>PatchWindow.cs</DependentUpon>
     </Compile>
-    <Compile Include="Graph\InputDevice.cs" />
     <Compile Include="MidiShortMsg.cs" />
-    <Compile Include="Graph\MidiSystem.cs" />
-    <Compile Include="Graph\OutputDevice.cs" />
-    <Compile Include="Graph\PatchUnit.cs" />
+    <Compile Include="MIDI\Engine\SystemUnit.cs" />
     <Compile Include="PatchWorker.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

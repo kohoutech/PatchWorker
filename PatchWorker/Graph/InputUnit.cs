@@ -22,6 +22,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Transonic.MIDI;
+using Transonic.MIDI.Engine;
+
 namespace PatchWorker.Graph
 {
     public class InputUnit : PatchUnit
@@ -41,10 +44,16 @@ namespace PatchWorker.Graph
             }            
         }
 
-        public override void processShortMsg(MidiShortMsg msg)
+        public override void receiveMessage(byte[] data)
+        {
+            Message msg = Message.getMessage(data, 0);
+            processMidiMsg(msg);
+        }
+
+        public override void processMidiMsg(Message msg)
         {
             Console.WriteLine("INPUT UNIT: got msg from input device" + indev.devName);
-            base.processShortMsg(msg);
+            base.processMidiMsg(msg);
         }
     }
 }

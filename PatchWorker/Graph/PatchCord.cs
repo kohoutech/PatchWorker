@@ -22,6 +22,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Transonic.MIDI;
+
 namespace PatchWorker.Graph
 {
     public class PatchCord
@@ -42,10 +44,10 @@ namespace PatchWorker.Graph
             outUnit = null;
         }
 
-        public void processShortMsg(MidiShortMsg msg)
+        public void processShortMsg(Message msg)
         {
-            Console.WriteLine(" PATCH CORD: got msg from input unit" + inUnit.uname + " sending it to output unit " + outUnit.uname);
-            outUnit.processShortMsg(msg);
+            Console.WriteLine(" PATCH CORD: got msg from input unit" + inUnit.name + " sending it to output unit " + outUnit.name);
+            outUnit.processMidiMsg(msg);                
         }
     }
 }

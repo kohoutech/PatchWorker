@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
-Patchworker : a midi patchbay
-Copyright (C) 2005-2017  George E Greaney
+Transonic MIDI Library
+Copyright (C) 1995-2017  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -23,7 +23,9 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace PatchWorker.Graph
+// p/invoke calls and structs used with WINMM.DLL library taken from http://www.pinvoke.net
+
+namespace Transonic.MIDI.Engine
 {
     public class InputDevice
     {
@@ -44,6 +46,8 @@ namespace PatchWorker.Graph
         [DllImport("winmm.dll", SetLastError = true)]
         private static extern MMRESULT midiInClose(IntPtr lphMidiIn);
 
+//-----------------------------------------------------------------------------
+
         //local vars
         public int devID;
         public String devName;
@@ -53,9 +57,9 @@ namespace PatchWorker.Graph
         private bool opened;
         private bool started;
         
-        List<InputUnit> unitList;
-
         const int CALLBACK_FUNCTION = 0x30000;
+
+        List<SystemUnit> unitList;
 
         //cons
         public InputDevice(int _id, string _name)
@@ -64,11 +68,10 @@ namespace PatchWorker.Graph
             devName = _name;
             opened = false;
             started = false;
-            unitList = new List<InputUnit>();
-            Console.WriteLine("created device " + devName);
+            unitList = new List<SystemUnit>();            
         }
 
-        public void connectUnit(InputUnit unit)
+        public void connectUnit(SystemUnit unit)
         {
             unitList.Add(unit);
         }
@@ -82,7 +85,7 @@ namespace PatchWorker.Graph
                 midiInProc = HandleMessage;
                 MMRESULT result = midiInOpen(out devHandle, devID, midiInProc, IntPtr.Zero, CALLBACK_FUNCTION);
                 opened = true;
-                Console.WriteLine("opened device " + devName + " result = " + result);
+                //Console.WriteLine("opened device " + devName + " result = " + result);
             }
         }
 
@@ -92,7 +95,7 @@ namespace PatchWorker.Graph
             {
                 MMRESULT result = midiInStart(devHandle);
                 started = true;
-                Console.WriteLine("started device " + devName + " result = " + result);
+                //Console.WriteLine("started device " + devName + " result = " + result);
             }
         }
 
@@ -102,7 +105,7 @@ namespace PatchWorker.Graph
             {
                 MMRESULT result = midiInStop(devHandle);
                 started = false;
-                Console.WriteLine("stopped device " + devName + " result = " + result);
+                //Console.WriteLine("stopped device " + devName + " result = " + result);
             }
         }
 
@@ -112,7 +115,7 @@ namespace PatchWorker.Graph
             {
                 MMRESULT result = midiInClose(devHandle);
                 opened = false;
-                Console.WriteLine("closed device " + devName + " result = " + result);
+                //Console.WriteLine("closed device " + devName + " result = " + result);
             }
         }
 
@@ -136,18 +139,19 @@ namespace PatchWorker.Graph
             }
             else if (msg == MIM_DATA)
             {
+                //short midi message, 3 midi bytes packed into 32-bit int, highest byte unused
                 byte[] msgbytes = BitConverter.GetBytes(param1);
-                MidiShortMsg shortMsg = new MidiShortMsg(msgbytes[0], msgbytes[1], msgbytes[2], param2);
-                foreach (InputUnit unit in unitList)
+                foreach (SystemUnit unit in unitList)
                 {
-                    unit.processShortMsg(shortMsg);
+                    unit.receiveMessage(msgbytes);
                 }
-                Console.WriteLine("name = " + devName + ", " + instance + ", " +
-                    msgbytes[0].ToString("X2") + "." + msgbytes[1].ToString("X2") + "." + msgbytes[2].ToString("X2") + ", " + 
-                    param2.ToString("X8"));
+                //Console.WriteLine("name = " + devName + ", " + instance + ", " +
+                //    msgbytes[0].ToString("X2") + "." + msgbytes[1].ToString("X2") + "." + msgbytes[2].ToString("X2") + ", " + 
+                //    param2.ToString("X8"));
             }
             else if (msg == MIM_LONGDATA)
-            {             
+            {
+                //we don't handle receiving sys ex msgs yet
             }
             else if (msg == MIM_MOREDATA)
             {

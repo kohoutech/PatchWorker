@@ -23,6 +23,8 @@ using System.Linq;
 using System.Text;
 using PatchWorker.Graph;
 
+using Transonic.MIDI.Engine;
+
 namespace PatchWorker
 {
     public class PatchWorker

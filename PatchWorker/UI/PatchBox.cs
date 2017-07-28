@@ -75,7 +75,7 @@ namespace PatchWorker.UI
             boxNum = ++boxCount;
             canvas = _canvas;
             unit = _unit;
-            unitName = unit.uname;
+            unitName = unit.name;
             inConnectors = new List<PatchLine>();
             outConnectors = new List<PatchLine>();
 
