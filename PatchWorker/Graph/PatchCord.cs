@@ -28,8 +28,8 @@ namespace PatchWorker.Graph
 {
     public class PatchCord
     {
-        PatchUnit inUnit;
-        PatchUnit outUnit;
+        public PatchUnit inUnit;
+        public PatchUnit outUnit;
 
         public PatchCord(PatchUnit _inUnit, PatchUnit _outUnit)
         {
@@ -39,14 +39,14 @@ namespace PatchWorker.Graph
 
         public void disconnect()
         {
-            inUnit.disconnectOutUnit(this);         //remove cord from input unit's cord list
+            inUnit.disconnectOutUnit(outUnit);         //remove cord from input unit's cord list
             inUnit = null;
             outUnit = null;
         }
 
-        public void processShortMsg(Message msg)
+        public void processMidiMsg(Message msg)
         {
-            Console.WriteLine(" PATCH CORD: got msg from input unit" + inUnit.name + " sending it to output unit " + outUnit.name);
+            //Console.WriteLine(" PATCH CORD: got msg from input unit" + inUnit.name + " sending it to output unit " + outUnit.name);
             outUnit.processMidiMsg(msg);                
         }
     }

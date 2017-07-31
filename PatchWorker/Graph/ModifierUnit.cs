@@ -21,18 +21,30 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml;
 
 using Transonic.MIDI;
 using Transonic.MIDI.Engine;
+using Transonic.Patch;
+using PatchWorker.UI;
 
 namespace PatchWorker.Graph
 {
     public class ModifierUnit : PatchUnit
     {
         //no special cons here
-        public ModifierUnit(PatchWorker _patchworker, UnitData _udata)
-            : base(_patchworker, _udata)
+        public ModifierUnit(PatchWorker _patchworker, String name)
+            : base(_patchworker, name)
+        {            
+        }
+
+        public override List<PatchPanel> getPatchPanels(PatchBox _box)
         {
+            List<PatchPanel> panels = new List<PatchPanel>();
+            panels.Add(new ProgramPanel(_box));
+            panels.Add(new InJackPanel(_box));
+            panels.Add(new OutJackPanel(_box));
+            return panels;
         }
 
         //just call parent method - for now
@@ -41,5 +53,12 @@ namespace PatchWorker.Graph
             base.processMidiMsg(msg);
         }
 
+//- persistance ---------------------------------------------------------------
+
+        public void saveToXML(XmlWriter xmlWriter)
+        {
+            xmlWriter.WriteStartElement("modifierunit");
+            xmlWriter.WriteEndElement();
+        }
     }
 }

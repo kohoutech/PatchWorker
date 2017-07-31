@@ -76,6 +76,20 @@ namespace Transonic.MIDI.Engine
             }
         }
 
+        public void shutdown()
+        {
+            foreach (InputDevice indev in inputDevices)
+            {
+                indev.stop();
+                indev.close();
+            }
+            foreach (OutputDevice outdev in outputDevices)
+            {
+                outdev.close();
+            }
+        }
+
+
         public List<String> getInDevNameList()
         {
             List<String> nameList = new List<String>();

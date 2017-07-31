@@ -27,8 +27,8 @@ namespace Transonic.MIDI.Engine
     public abstract class SystemUnit
     {
         public String name;
-        public InputDevice inputDev;
-        public List<OutputDevice> outputDevList;       //connections to output devices
+        public InputDevice inputDev;                    //connect from input device
+        public List<OutputDevice> outputDevList;        //connections to output devices
 
         public SystemUnit(String _name)
         {
@@ -39,6 +39,11 @@ namespace Transonic.MIDI.Engine
 
         //for connection to input devices
         public virtual void receiveMessage(byte[] msg)
+        {
+        }
+
+        //for connection to output devices
+        public virtual void sendMessage(byte[] msg)
         {
         }
     }

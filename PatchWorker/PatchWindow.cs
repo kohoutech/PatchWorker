@@ -27,165 +27,199 @@ using System.Text;
 using System.Windows.Forms;
 using PatchWorker.UI;
 using PatchWorker.Graph;
+using PatchWorker.Dialogs;
 
 using Transonic.MIDI.Engine;
+using Transonic.Patch;
 
 namespace PatchWorker
 {
-    public partial class PatchWindow : Form
+    public partial class PatchWindow : Form, IPatchView
     {
         public PatchWorker patchworker;
         public PatchCanvas canvas;
+        String patchFilename;
+
+        int inputUnitMenuItems;
+        int outputUnitMenuItems;
 
         //cons
         public PatchWindow()
         {
-            InitializeComponent();
             patchworker = new PatchWorker(this);
-            canvas = new PatchCanvas(this);
-            canvas.SetBounds(0, this.PatchMenu.Height, this.Width,
-                this.Height - this.PatchMenu.Height - this.PatchStatus.Height);
-            this.Controls.Add(canvas);
-        }
 
-        private void PatchWindow_Resize(object sender, EventArgs e)
-        {
-            //canvas.Size = this.ClientSize;
-            canvas.SetBounds(0, this.PatchMenu.Height, this.Width, this.Height - this.PatchMenu.Height - this.PatchStatus.Height);
+            InitializeComponent();
+
+            inputUnitMenuItems = 0;
+            outputUnitMenuItems = 0;
+            patchworker.loadConfig();
+
+            canvas = new PatchCanvas(this);
+            canvas.Dock = DockStyle.Fill;
+            this.Controls.Add(canvas);
+
+            patchFilename = null;
+            this.Text = "PatchWorker [new patch]";
         }
 
         //save settings & clean up on shut down
         private void PatchWindow_FormClosed(object sender, FormClosedEventArgs e)
         {
-            patchworker.saveUnitData();
-            foreach (InputDevice indev in patchworker.midiSystem.inputDevices)
+            patchworker.shutdown();
+        }
+
+//- file menu -----------------------------------------------------------------
+
+        public bool savePatch(bool newName)
+        {
+            if (newName || patchFilename == null)
             {
-                indev.stop();
-                indev.close();
+                String filename = "";
+                savePatchDialog.InitialDirectory = Application.StartupPath;
+                savePatchDialog.DefaultExt = "*.pwp";
+                savePatchDialog.Filter = "patch files|*.pwp|All files|*.*";
+                savePatchDialog.ShowDialog();
+                filename = savePatchDialog.FileName;
+                if (filename.Length == 0) return false;
+
+                //add default extention if filename doesn't have one
+                if (!filename.Contains('.'))
+                    filename = filename + ".pwp";
+                patchFilename = filename;
             }
-            foreach (OutputDevice outdev in patchworker.midiSystem.outputDevices)
+            canvas.savePatch(patchFilename);
+            String msg = "Current patch has been saved as\n " + patchFilename;
+            MessageBox.Show(msg, "Saved");
+            this.Text = "PatchWorker [" + patchFilename + "]";
+            return true;
+        }
+
+        private void patchNewMenuItem_Click(object sender, EventArgs e)
+        {
+            canvas.clearPatch();
+            patchFilename = null;
+            this.Text = "PatchWorker [new patch]";
+        }
+
+        private void patchLoadMenuItem_Click(object sender, EventArgs e)
+        {
+            openPatchDialog.InitialDirectory = Application.StartupPath;
+            openPatchDialog.DefaultExt = "*.pwp";
+            openPatchDialog.Filter = "patch files|*.pwp|All files|*.*";
+            openPatchDialog.ShowDialog();
+            String filename = openPatchDialog.FileName;
+            if (filename.Length > 0)
             {
-                outdev.close();
+                patchFilename = filename;
+                canvas.loadPatch(patchFilename);
+                this.Text = "PatchWorker [" + patchFilename + "]";
             }
         }
 
-        //- file menu -----------------------------------------------------------------
+        private void patchSaveMenuItem_Click(object sender, EventArgs e)
+        {
+            savePatch(false);
+        }
+
+        private void patchSaveAsMenuItem_Click(object sender, EventArgs e)
+        {
+            savePatch(true);
+        }
 
         private void fileExitMenuItem_Click(object sender, EventArgs e)
         {
             Application.Exit();
         }
 
-//- patch menu ----------------------------------------------------------------
-
-        private void patchNewMenuItem_Click(object sender, EventArgs e)
-        {
-
-            canvas.clearPatch();
-        }
-
-        private void patchLoadMenuItem_Click(object sender, EventArgs e)
-        {
-            openPatchDialog.InitialDirectory = Application.StartupPath;
-            openPatchDialog.ShowDialog();
-            String patchfilename = openPatchDialog.FileName;
-            if (patchfilename.Length > 0)
-            {
-                canvas.loadPatch(patchfilename);
-            }
-        }
-
-        private void patchSaveMenuItem_Click(object sender, EventArgs e)
-        {
-            savePatchDialog.InitialDirectory = Application.StartupPath;
-            savePatchDialog.ShowDialog();
-            String patchfilename = savePatchDialog.FileName;
-            if (patchfilename.Length > 0)
-            {
-                canvas.savePatch(patchfilename);
-            }
-        }
-
 //- unit menu ---------------------------------------------------------------
 
-        int inputItems;
-        int modifierItems;
-        int outputItems;
-
-        public void initUnitMenu()
+        public void addInputUnitToMenu(PatchUnit unit)
         {
-            inputItems = 0;
-            modifierItems = 0;
-            outputItems = 0;
+            ToolStripItem inputItem = new ToolStripMenuItem(unit.name);
+            inputItem.Click += new EventHandler(unitSelectMenuItem_Click);
+            inputItem.Tag = unit;
+            unit.setMenuItem(inputItem);
+            if (inputUnitMenuItems == 0)
+            {
+                unitMenuItem.DropDownItems.Add(new ToolStripSeparator());
+                inputUnitMenuItems++;
+            }
+            unitMenuItem.DropDownItems.Insert((3 + inputUnitMenuItems), inputItem);
+            inputUnitMenuItems++;
         }
 
-        public void addUnitMenuItem(UnitData udata)
+        public void addModifierUnitToMenu(PatchUnit unit)
         {
-            switch (udata.utype)
+        }
+
+        public void addOutputUnitToMenu(PatchUnit unit)
+        {
+            ToolStripItem inputItem = new ToolStripMenuItem(unit.name);
+            inputItem.Click += new EventHandler(unitSelectMenuItem_Click);
+            inputItem.Tag = unit;
+            unit.setMenuItem(inputItem);
+            if (outputUnitMenuItems == 0)
             {
-                case UNITTYPE.INPUT:
-                    addInputUnitMenuItem(udata);
-                    break;
-                case UNITTYPE.MODIFIER:
-                    addModifierUnitMenuItem(udata);
-                    break;
-                case UNITTYPE.OUTPUT:
-                    addOutputUnitMenuItem(udata);
-                    break;
+                unitMenuItem.DropDownItems.Add(new ToolStripSeparator());
+                outputUnitMenuItems++;
+            }
+            unitMenuItem.DropDownItems.Insert((3 + inputUnitMenuItems + outputUnitMenuItems), inputItem);
+            outputUnitMenuItems++;
+        }
+
+        public void addInputUnitMenuItem_Click(object sender, EventArgs e)
+        {
+            if (patchworker.midiSystem.inputDevices.Count > 0)
+            {
+                InputUnitDialog unitdlg = new InputUnitDialog(patchworker);
+                unitdlg.ShowDialog();
+                if (unitdlg.DialogResult == DialogResult.OK)
+                {
+                    InputUnit inUnit = new InputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum);
+                    patchworker.addInputUnit(inUnit);
+                }
+            }
+            else
+            {
+                String msg = "You can't add any input units because you \ndon't have any MIDI input devices installed!";
+                MessageBox.Show(msg, "Zoinks!");
             }
         }
 
-        public void addInputUnitMenuItem(UnitData udata)
+        public void addModifierUnitMenuItem_Click(object sender, EventArgs e)
         {
-            ToolStripItem inputItem = new ToolStripMenuItem(udata.name);
-            inputItem.Click += new EventHandler(unitSelectMenuItem_Click);
-            inputItem.Tag = udata;
-            udata.setMenuItem(inputItem);
-            unitsMenuItem.DropDownItems.Insert((inputItems + 2), inputItem);
-            inputItems++;
+            String msg = "Patchworker modifers are still in development. Anon! Anon!";
+            MessageBox.Show(msg, "In the works");
         }
 
-        public void addModifierUnitMenuItem(UnitData udata)
+        public void addOutputUnitMenuItem_Click(object sender, EventArgs e)
         {
-            ToolStripItem modifierItem = new ToolStripMenuItem(udata.name);
-            modifierItem.Click += new EventHandler(unitSelectMenuItem_Click);
-            modifierItem.Tag = udata;
-            udata.setMenuItem(modifierItem);
-            unitsMenuItem.DropDownItems.Insert((inputItems + modifierItems + 2), modifierItem);
-            modifierItems++;
-        }
-
-        public void addOutputUnitMenuItem(UnitData udata)
-        {
-            ToolStripItem outputItem = new ToolStripMenuItem(udata.name);
-            outputItem.Click += new EventHandler(unitSelectMenuItem_Click);
-            outputItem.Tag = udata;
-            udata.setMenuItem(outputItem);
-            unitsMenuItem.DropDownItems.Insert((inputItems + modifierItems + outputItems + 2), outputItem);
-            outputItems++;
+            if (patchworker.midiSystem.outputDevices.Count > 0)
+            {
+                OutputUnitDialog unitdlg = new OutputUnitDialog(patchworker);
+                unitdlg.ShowDialog();
+                if (unitdlg.DialogResult == DialogResult.OK)
+                {
+                    OutputUnit outUnit = new OutputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum, unitdlg.progNum);
+                    patchworker.addOutputUnit(outUnit);
+                }
+            }
+            else
+            {
+                String msg = "You can't add any output units because you \ndon't have any MIDI output devices installed!";
+                MessageBox.Show(msg, "Zoinks!");
+            }
         }
 
         //handler for all unit menu items
         private void unitSelectMenuItem_Click(object sender, EventArgs e)
         {
             ToolStripItem item = (ToolStripItem)sender;
-            UnitData udata = (UnitData)item.Tag;                //get unit def from menu item
-            PatchUnit unit = patchworker.addUnitToPatch(udata);          //create patch unit from def & add it to graph
-            canvas.addPatchBox(unit);                           //create unit view from unit model & add it to canvas
-        }
+            PatchUnit unit = (PatchUnit)item.Tag;                      //get patch unit obj from menu item
 
-        private void unitNewMenuItem_Click(object sender, EventArgs e)
-        {
-            UnitDataDialog unitdlg = new UnitDataDialog();
-            unitdlg.patchworker = patchworker;
-            unitdlg.setInitialData(null);      //new unit - no initial data
-            unitdlg.ShowDialog();
-            if (unitdlg.DialogResult == DialogResult.OK)
-            {
-                UnitData udata = unitdlg.udata;
-                Console.WriteLine(" adding new unit data " + udata.name + " with dev = " + udata.devName + " and channel = " + udata.channelNum);
-                patchworker.addUnitData(udata);
-            }
+            patchworker.addUnitToPatch(unit);               //add patch unit to graph
+            PatchUnitBox box = new PatchUnitBox(unit);      //create new patch box from unit
+            canvas.addPatchBox(box);                        //and add it to canvas
         }
 
 //- help menu ----------------------------------------------------------------
@@ -200,4 +234,4 @@ namespace PatchWorker
     }
 }
 
-//  Console.WriteLine(" adding new unit data " + udata.name);
+//Console.WriteLine("there's no sun in the shadow of the Wizard");

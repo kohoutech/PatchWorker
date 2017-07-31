@@ -21,27 +21,55 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml;
 
 using Transonic.MIDI;
 using Transonic.MIDI.Engine;
+using Transonic.Patch;
+using PatchWorker.UI;
 
 namespace PatchWorker.Graph
 {
     public class InputUnit : PatchUnit
     {
-        InputDevice indev;
+        String indevName;
+        int channelNum;
+        bool started;
 
-        //connect input device to input unit
-        public InputUnit(PatchWorker _patchworker, UnitData _udata, InputDevice _indev)
-            : base(_patchworker, _udata)
+        //cons
+        public InputUnit(PatchWorker _patchworker, String name, String _indevName, int _channel)
+            : base(_patchworker, name)
         {
-            indev = _indev;
-            if (indev != null)
+            indevName = _indevName;
+            channelNum = _channel;
+            started = false;
+        }
+
+        public override List<PatchPanel> getPatchPanels(PatchBox _box)
+        {
+            List<PatchPanel> panels = new List<PatchPanel>();
+            panels.Add(new OutJackPanel(_box));
+            return panels;
+        }
+
+//- operation ---------------------------------------------------------------
+
+        public override void start()
+        {
+            if (!started)
             {
-                indev.connectUnit(this);
-                indev.open();
-                indev.start();              //open device & start receiving input
+                inputDev = patchworker.midiSystem.findInputDevice(indevName);
+                inputDev.connectUnit(this);
+                inputDev.open();
+                inputDev.start();              //open device & start receiving input
+                started = true;
             }            
+        }
+
+        public override void stop()
+        {
+            inputDev.stop();
+            started = false;
         }
 
         public override void receiveMessage(byte[] data)
@@ -52,8 +80,26 @@ namespace PatchWorker.Graph
 
         public override void processMidiMsg(Message msg)
         {
-            Console.WriteLine("INPUT UNIT: got msg from input device" + indev.devName);
             base.processMidiMsg(msg);
+        }
+
+//- persistance ---------------------------------------------------------------
+
+        public static InputUnit loadFromXML(PatchWorker _patchworker, XmlNode unitNode)
+        {
+            String name = unitNode.Attributes["name"].Value;
+            String devicename = unitNode.Attributes["devicename"].Value;
+            int channel = Convert.ToInt32(unitNode.Attributes["channel"].Value);
+            return new InputUnit(_patchworker, name, devicename, channel);
+        }
+
+        public void saveToXML(XmlWriter xmlWriter)
+        {
+            xmlWriter.WriteStartElement("inputunit");
+            xmlWriter.WriteAttributeString("name", name);
+            xmlWriter.WriteAttributeString("devicename", indevName);
+            xmlWriter.WriteAttributeString("channel", channelNum.ToString());
+            xmlWriter.WriteEndElement();
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿/* ----------------------------------------------------------------------------
-Patchworker : a midi patchbay
+Transonic Patch Library
 Copyright (C) 2005-2017  George E Greaney
 
 This program is free software; you can redistribute it and/or
@@ -28,37 +28,28 @@ using System.Xml;
 using System.Xml.Serialization;
 using System.Drawing.Drawing2D;
 
-namespace PatchWorker.UI
+namespace Transonic.Patch
 {
-    public class PatchCanvas : Control
+    public class PatchCanvas : UserControl
     {
-        [XmlIgnore]
-        public PatchWindow patchwin;
+        public IPatchView patchwin;
         List<PatchBox> boxList;
         List<PatchLine> lineList;
 
-        [XmlIgnore]
         PatchBox selectedBox;
-        [XmlIgnore]
-        PatchBox targetBox;
+        PatchPanel targetPanel;
 
-        [XmlIgnore]
         Point newBoxOrg;
 
-        [XmlIgnore]
         bool dragging;
-        [XmlIgnore]
         Point dragOrg;
-        [XmlIgnore]
         Point dragOfs;
 
-        [XmlIgnore]
         bool connecting;
-        [XmlIgnore]
         PatchLine connectLine;
 
         //cons
-        public PatchCanvas(PatchWindow _patchwin)
+        public PatchCanvas(IPatchView _patchwin)
         {
             patchwin = _patchwin;
             boxList = new List<PatchBox>();
@@ -72,70 +63,106 @@ namespace PatchWorker.UI
             dragging = false;
             connecting = false;
             selectedBox = null;
-            targetBox = null;
+            targetPanel = null;
         }
+
+//- patch methods -------------------------------------------------------------
 
         public void clearPatch()
         {
+            //connections
             List<PatchLine> dellineList = new List<PatchLine>(lineList);
             foreach (PatchLine line in dellineList)
             {
                 removePatchLine(line);
             }
-            PatchBox.boxCount = 0;
+
+            //boxes
             List<PatchBox> delboxList = new List<PatchBox>(boxList);
             foreach (PatchBox box in delboxList)
             {
                 removePatchBox(box);
             }
+
+            PatchBox.boxCount = 0;
+            PatchPanel.panelCount = 0;
             newBoxOrg = new Point(50, 50);
-        }
-
-        public void savePatch(String patchFileName)
-        {
-            CanvasArchive arch = new CanvasArchive(boxList, lineList);
-
-            var settings = new XmlWriterSettings();
-            settings.OmitXmlDeclaration = true;
-            settings.Indent = true;
-            settings.NewLineOnAttributes = true;
-            
-            XmlSerializer xs = new XmlSerializer(arch.GetType());
-            using (XmlWriter writer = XmlWriter.Create(patchFileName, settings))
-            {
-                xs.Serialize(writer, arch);
-            }
         }
 
         public void loadPatch(String patchFileName)
         {
             clearPatch();       //start with a clean slate
 
-            CanvasArchive arch = null;
-            XmlSerializer xs = new XmlSerializer(typeof(CanvasArchive));
-            using (XmlReader reader = XmlReader.Create(patchFileName))
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.Load(patchFileName);
+
+            foreach (XmlNode patchNode in xmlDoc.DocumentElement.ChildNodes)
             {
-                arch = (CanvasArchive)xs.Deserialize(reader);
+                if (patchNode.Name.Equals("boxes"))
+                {
+                    foreach (XmlNode boxNode in patchNode.ChildNodes)
+                    {
+                        loadPatchBox(boxNode);
+                    }
+                }
+                if (patchNode.Name.Equals("connections"))
+                {
+                    foreach (XmlNode lineNode in patchNode.ChildNodes)
+                    {
+                        loadPatchLine(lineNode);
+                    }
+                }
             }
-            int maxBoxNum = 0;
-            foreach (PatchBox box in arch.boxList)
+
+            //renumber boxes
+            int boxNum = 0;
+            foreach (PatchBox box in boxList)
             {
-                loadPatchBox(box);
-                if (box.boxNum > maxBoxNum) maxBoxNum = box.boxNum;
+                box.boxNum = ++boxNum;
+                box.RenumberPanels();
             }
-            PatchBox.boxCount = maxBoxNum;                  //start num new boxes after the nighest box num from loaded patch
-            foreach (PatchLine line in arch.lineList)
-            {
-                loadPatchLine(line);
-            }
+            PatchBox.boxCount = boxNum;
+
             Invalidate();
         }
 
+        public void savePatch(String patchFileName)
+        {
+            var settings = new XmlWriterSettings();
+            settings.OmitXmlDeclaration = true;
+            settings.Indent = true;
+            settings.NewLineOnAttributes = true;
+
+            XmlWriter xmlWriter = XmlWriter.Create(patchFileName, settings);
+
+            xmlWriter.WriteStartDocument();
+            xmlWriter.WriteStartElement("patchworkerpatch");
+            xmlWriter.WriteAttributeString("version", "1.1.0");
+
+            xmlWriter.WriteStartElement("boxes");
+            foreach (PatchBox box in boxList)
+            {
+                box.saveToXML(xmlWriter);
+            }
+            xmlWriter.WriteEndElement();
+
+            xmlWriter.WriteStartElement("connections");
+            foreach (PatchLine line in lineList)
+            {
+                line.saveToXML(xmlWriter);
+            }
+            xmlWriter.WriteEndElement();
+
+            xmlWriter.WriteEndDocument();
+            xmlWriter.Close();
+        }
+        
 //- box methods ---------------------------------------------------------------
 
-        public void addPatchBox(PatchUnit unit)
+        public void addPatchBox(PatchBox box)
         {
-            PatchBox box = new PatchBox(this, unit, newBoxOrg);
+            box.canvas = this;
+            box.setPos(newBoxOrg);
             newBoxOrg.Offset(20, 20);
             if (!this.ClientRectangle.Contains(newBoxOrg))
             {
@@ -145,11 +172,10 @@ namespace PatchWorker.UI
             Invalidate();
         }
 
-        public void loadPatchBox(PatchBox box)
+        public void loadPatchBox(XmlNode boxNode)
         {
+            PatchBox box = PatchBox.loadFromXML(boxNode);
             box.canvas = this;
-            UnitData udata = patchwin.patchworker.findUnitData(box.unitName);
-            box.unit = patchwin.patchworker.addUnitToPatch(udata);
             boxList.Add(box);
         }
 
@@ -160,7 +186,7 @@ namespace PatchWorker.UI
             {
                 removePatchLine(line);                  //remove all connections first
             }
-            boxList.Remove(box);                //and remove box from canvas            
+            boxList.Remove(box);                        //and remove box from canvas            
             box.delete();
             Invalidate();            
         }
@@ -194,17 +220,13 @@ namespace PatchWorker.UI
 
 //- line methods ---------------------------------------------------------------
 
-        public void loadPatchLine(PatchLine line)
+        public void loadPatchLine(XmlNode lineNode)
         {
-            line.canvas = this;
-            PatchBox outBox = findPatchBox(line.outNum);        //find boxes from box nums in line
-            PatchBox inBox = findPatchBox(line.inNum);
-            line.connectOutputJack(outBox);                     //connect out jack first
-            line.connectInputJack(inBox);                       //then in jack - and connect backing units in model
+            PatchLine line = PatchLine.loadFromXML(this, lineNode);
             lineList.Add(line);
         }
 
-        //patch line will be connected to output jack, but may or may not be connected to input jack
+        //patch line will be connected to source jack, but may or may not be connected to dest jack
         public void removePatchLine(PatchLine line)
         {
             line.disconnect();
@@ -234,16 +256,20 @@ namespace PatchWorker.UI
 
             if (handled)        //we clicked somewhere inside a patchbox (and selected it), check if dragging or connecting
             {
-                if (selectedBox.dragTest(e.Location))           //if we clicked on name panel
+                if (selectedBox.dragTest(e.Location))           //if we clicked on title panel
                 {
                     startDrag(e.Location);
                 }
-                else if (selectedBox.jackTest(e.Location))      //if we clicked on jack panel
+                else
                 {
-                    startConnection(e.Location);
+                    PatchPanel panel = selectedBox.panelHitTest(e.Location);
+                    if (panel != null && panel.canConnectOut())                     //if we clicked on out jack panel
+                    {
+                        startConnection(panel, e.Location);
+                    }
                 }
-
             }
+
             else            //we clicked on a blank area of the canvas - deselect current selection if there is one
             {
                 if (selectedBox != null)
@@ -286,9 +312,13 @@ namespace PatchWorker.UI
         protected override void OnMouseClick(MouseEventArgs e)
         {
             base.OnMouseClick(e);
-            if (selectedBox != null && selectedBox.progPanel != null && selectedBox.progPanel.hitTest(e.Location))                
+            if (selectedBox != null)
             {
-                selectedBox.progPanel.handleClick(e.Location, selectedBox);
+                PatchPanel panel = selectedBox.panelHitTest(e.Location);
+                if (panel != null)
+                {
+                    panel.onClick(e.Location);
+                }
             }
             Invalidate();
         }
@@ -335,17 +365,17 @@ namespace PatchWorker.UI
 
         //for now, connections start from selected box's output jack
         //if it doesn't have output jack, it would fail jack hit test & not get here
-        public void startConnection(Point p)
+        public void startConnection(PatchPanel panel, Point p)
         {
             connecting = true;
-            connectLine = new PatchLine(this, selectedBox, p);      //create new line & connect output end to selected box
-            lineList.Add(connectLine);                              //add to canvas
-            targetBox = null;
+            connectLine = new PatchLine(this, panel, p);      //create new line & connect output end to selected box
+            lineList.Add(connectLine);                        //add to canvas
+            targetPanel = null;
         }
 
         public void moveConnection(Point p)
         {
-            connectLine.setInEndPos(p);         //move line
+            connectLine.setDestEndPos(p);         //move line
             
             //check if currently over a possible target box
             bool handled = false;
@@ -356,23 +386,27 @@ namespace PatchWorker.UI
                 {
                     if (box != selectedBox)         //check selected box in case another box is under it, but don't connect to itself
                     {
-                        if (targetBox != null)
+                        PatchPanel panel = box.panelHitTest(p);
+                        if (panel != null && panel.canConnectIn() && !panel.isConnected())
                         {
-                            targetBox.setTargeted(false);     //deselect current target, if there is one
+                            if (targetPanel != null)
+                            {
+                                targetPanel.patchbox.setTargeted(false);    //deselect current target, if there is one
+                            }
+                            targetPanel = panel;                            //mark panel as current target, if we drop connection on it
+                            targetPanel.patchbox.setTargeted(true);         //and let the panel's box know it
+                            handled = true;
                         }
-                        targetBox = box;                      //mark box as current target, if we drop connection on it
-                        targetBox.setTargeted(true);          //and let the box know it
-                        handled = true;
                     }
                     break;
                 }
             }
 
             //if we aren't currently over any targets, unset prev target, if one
-            if ((!handled) && (targetBox != null))
+            if ((!handled) && (targetPanel != null))
             {
-                targetBox.setTargeted(false);
-                targetBox = null;
+                targetPanel.patchbox.setTargeted(false);
+                targetPanel = null;
             }
 
             Invalidate();
@@ -380,16 +414,17 @@ namespace PatchWorker.UI
 
         public void finishConnection(Point p)
         {
-            if (targetBox != null)                              //drop connection on target box we are currently over
+            if (targetPanel != null)                              //drop connection on target box we are currently over
             {
-                connectLine.connectInputJack(targetBox);        //connect line to tagret box and input & output units in model
-                targetBox.setTargeted(false);
-                targetBox = null;
+                connectLine.connectDestJack(targetPanel);        //connect line to tagret box and input & output units in model
+                targetPanel.patchbox.setTargeted(false);
+                targetPanel = null;
             }
             else            //not over a target box, delete patch line
             {
                 removePatchLine(connectLine);                
             }
+            connectLine = null;
             connecting = false;
             Invalidate();
         }
@@ -414,27 +449,6 @@ namespace PatchWorker.UI
             }
         }
     }
-
-//-----------------------------------------------------------------------------
-
-    [Serializable]
-    public class CanvasArchive
-    {
-        public List<PatchBox> boxList;
-        public List<PatchLine> lineList;
-
-        public CanvasArchive()
-        {
-            boxList = new List<PatchBox>();
-            lineList = new List<PatchLine>();
-        }
-
-        public CanvasArchive(List<PatchBox> _boxList, List<PatchLine> _lineList)
-        {
-            boxList = _boxList;
-            lineList = _lineList;
-        }
-    }
 }
 
-//Console.WriteLine(" not over a connection target");
+//Console.WriteLine("there's no sun in the shadow of the Wizard");

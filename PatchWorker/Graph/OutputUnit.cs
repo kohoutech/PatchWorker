@@ -21,27 +21,55 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml;
 
 using Transonic.MIDI;
 using Transonic.MIDI.Engine;
+using Transonic.Patch;
+using PatchWorker.UI;
 
 namespace PatchWorker.Graph
 {
     public class OutputUnit : PatchUnit
     {
         OutputDevice outDev;
+        String outDevName;
         int channelNum;
+        public int progCount;
+        bool started;
 
-        //connect output unit to output unit
-        public OutputUnit(PatchWorker _patchworker, UnitData _udata, OutputDevice _outDev)
-            : base(_patchworker, _udata)
+        //user cons
+        public OutputUnit(PatchWorker _patchworker, String name, String _outDevName, int _channel, int _progNum)
+            : base(_patchworker, name)
         {
-            outDev = _outDev;
-            if (outDev != null)
+            outDevName = _outDevName;
+            channelNum = _channel;
+            progCount = _progNum;
+            started = false;            
+        }
+
+        public override List<PatchPanel> getPatchPanels(PatchBox _box)
+        {
+            List<PatchPanel> panels = new List<PatchPanel>();
+            panels.Add(new ProgramPanel(_box));
+            panels.Add(new InJackPanel(_box));
+            return panels;
+        }
+
+//- operation ---------------------------------------------------------------
+
+        public override void start()
+        {
+            if (!started)
             {
-                outDev.open();          //open output device to send data to
+                outDev = patchworker.midiSystem.findOutputDevice(outDevName);
+                outDev.open();
             }
-            channelNum = _udata.channelNum;
+        }
+
+        public override void stop()
+        {
+            started = false;
         }
 
         //instead of sending msg to next unit in patch, we send it to the output device
@@ -52,10 +80,6 @@ namespace PatchWorker.Graph
                 Console.WriteLine("OUTPUT UNIT: sending msg to output device " + outDev.devName);
                 outDev.sendMessage(msg.getDataBytes());                    
             }
-            else
-            {
-                Console.WriteLine("OUTPUT UNIT: no output device to send msg to");
-            }
         }
 
         public void sendProgramChange(int progNum)
@@ -65,5 +89,25 @@ namespace PatchWorker.Graph
             processMidiMsg(msg);
         }
 
+//- persistance ---------------------------------------------------------------
+
+        public static OutputUnit loadFromXML(PatchWorker _patchworker, XmlNode unitNode)
+        {
+            String name = unitNode.Attributes["name"].Value;
+            String devicename = unitNode.Attributes["devicename"].Value;
+            int channel = Convert.ToInt32(unitNode.Attributes["channel"].Value);
+            int progcount = Convert.ToInt32(unitNode.Attributes["progcount"].Value);
+            return new OutputUnit(_patchworker, name, devicename, channel, progcount);
+        }
+
+        public void saveToXML(XmlWriter xmlWriter)
+        {
+            xmlWriter.WriteStartElement("outputunit");
+            xmlWriter.WriteAttributeString("name", name);
+            xmlWriter.WriteAttributeString("devicename", outDevName);
+            xmlWriter.WriteAttributeString("channel", channelNum.ToString());
+            xmlWriter.WriteAttributeString("progcount", progCount.ToString());
+            xmlWriter.WriteEndElement();
+        }
     }
 }
