@@ -23,7 +23,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace Transonic.MIDI.Engine
+namespace Transonic.MIDI.System
 {
     public class MidiTimer
     {

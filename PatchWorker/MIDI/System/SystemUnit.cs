@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Transonic.MIDI.Engine
+namespace Transonic.MIDI.System
 {
     public abstract class SystemUnit
     {

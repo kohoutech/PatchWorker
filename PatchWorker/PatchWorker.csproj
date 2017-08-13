@@ -79,10 +79,10 @@
     <Compile Include="Graph\PatchCord.cs" />
     <Compile Include="Graph\PatchUnit.cs" />
     <Compile Include="MIDI\Engine\IMidiView.cs" />
-    <Compile Include="MIDI\Engine\InputDevice.cs" />
-    <Compile Include="MIDI\Engine\MidiSystem.cs" />
+    <Compile Include="MIDI\System\InputDevice.cs" />
+    <Compile Include="MIDI\System\MidiSystem.cs" />
     <Compile Include="MIDI\Engine\MidiTimer.cs" />
-    <Compile Include="MIDI\Engine\OutputDevice.cs" />
+    <Compile Include="MIDI\System\OutputDevice.cs" />
     <Compile Include="MIDI\Engine\Transport.cs" />
     <Compile Include="MIDI\Event.cs" />
     <Compile Include="MIDI\Message.cs" />
@@ -95,7 +95,7 @@
     <Compile Include="PatchWindow.Designer.cs">
       <DependentUpon>PatchWindow.cs</DependentUpon>
     </Compile>
-    <Compile Include="MIDI\Engine\SystemUnit.cs" />
+    <Compile Include="MIDI\System\SystemUnit.cs" />
     <Compile Include="PatchWorker.cs" />
     <Compile Include="Patch\IPatchView.cs" />
     <Compile Include="Patch\PatchBox.cs" />

@@ -24,7 +24,7 @@ using System.Text;
 
 //interface for midi engine to communicate back to user interface
 
-namespace Transonic.MIDI.Engine
+namespace Transonic.MIDI.System
 {
     public interface IMidiView
     {

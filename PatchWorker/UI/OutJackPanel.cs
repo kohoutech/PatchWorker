@@ -65,7 +65,7 @@ namespace PatchWorker.UI
             PatchUnit source = srcbox.unit;
             PatchUnitBox destbox = (PatchUnitBox)destPanel.patchbox;
             PatchUnit dest = destbox.unit;
-            source.connectOutUnit(dest);
+            source.connectDest(dest);
         }
 
         public override void breakConnection(PatchPanel destPanel)
@@ -74,8 +74,13 @@ namespace PatchWorker.UI
             PatchUnit source = srcbox.unit;
             PatchUnitBox destbox = (PatchUnitBox)destPanel.patchbox;
             PatchUnit dest = destbox.unit;
-            source.disconnectOutUnit(dest);
+            source.disconnectDest(dest);
         }
+
+        public override void onClick(Point pos)
+        {            
+        }
+
 
 //- painting ------------------------------------------------------------------
 

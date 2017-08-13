@@ -184,6 +184,7 @@ namespace Transonic.Patch
 
 //- panel loader class --------------------------------------------------------
 
+    //subclassed by descendants so correct class will be loaded from XML file
     public class PatchPanelLoader
     {
         public virtual PatchPanel loadFromXML(PatchBox box, XmlNode panelNode)

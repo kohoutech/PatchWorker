@@ -22,11 +22,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
+//using System.Windows.Forms;
 
 using Transonic.MIDI;
-using Transonic.MIDI.Engine;
+using Transonic.MIDI.System;
 using Transonic.Patch;
 using PatchWorker.UI;
+using PatchWorker.Dialogs;
 
 namespace PatchWorker.Graph
 {
@@ -45,6 +47,23 @@ namespace PatchWorker.Graph
             started = false;
         }
 
+        public override void editSettings()
+        {
+            InputUnitDialog unitdlg = new InputUnitDialog(patchworker, name, indevName, channelNum);
+            unitdlg.ShowDialog();
+            if (unitdlg.DialogResult == System.Windows.Forms.DialogResult.OK)
+            {
+                name = unitdlg.name;
+                if (!indevName.Equals(unitdlg.devName))         //if we've changed input devices, restart new dev;
+                {
+                    stop();
+                    indevName = unitdlg.devName;
+                    start();
+                }
+                channelNum = unitdlg.chanNum;
+            }
+        }
+
         public override List<PatchPanel> getPatchPanels(PatchBox _box)
         {
             List<PatchPanel> panels = new List<PatchPanel>();
@@ -58,24 +77,28 @@ namespace PatchWorker.Graph
         {
             if (!started)
             {
+#if(!DEBUG)
                 inputDev = patchworker.midiSystem.findInputDevice(indevName);
                 inputDev.connectUnit(this);
                 inputDev.open();
                 inputDev.start();              //open device & start receiving input
+#endif
                 started = true;
             }            
         }
 
         public override void stop()
         {
+#if(!DEBUG)
             inputDev.stop();
+#endif
             started = false;
         }
 
         public override void receiveMessage(byte[] data)
         {
-            Message msg = Message.getMessage(data, 0);
-            processMidiMsg(msg);
+            Message msg = Message.getMessage(data, 0);          //convert incoming bytes into midi message
+            processMidiMsg(msg);                                //and send it on its way
         }
 
         public override void processMidiMsg(Message msg)
@@ -85,12 +108,25 @@ namespace PatchWorker.Graph
 
 //- persistance ---------------------------------------------------------------
 
-        public static InputUnit loadFromXML(PatchWorker _patchworker, XmlNode unitNode)
+        public static InputUnit loadFromXML(PatchWorker patchworker, XmlNode unitNode)
         {
             String name = unitNode.Attributes["name"].Value;
             String devicename = unitNode.Attributes["devicename"].Value;
             int channel = Convert.ToInt32(unitNode.Attributes["channel"].Value);
-            return new InputUnit(_patchworker, name, devicename, channel);
+
+#if(!DEBUG)
+            InputDevice inDev = patchworker.midiSystem.findInputDevice(devicename);
+            if (inDev != null)
+            {
+                return new InputUnit(patchworker, name, devicename, channel);
+            }
+            else
+            {
+                throw new PatchUnitLoadException(name, "no input device " + devicename + " found");
+            }
+#else
+            return new InputUnit(patchworker, name, devicename, channel);
+#endif
         }
 
         public void saveToXML(XmlWriter xmlWriter)

@@ -26,7 +26,7 @@ using System.Runtime.InteropServices;
 
 // p/invoke calls and structs used with WINMM.DLL library taken from http://www.pinvoke.net
 
-namespace Transonic.MIDI.Engine
+namespace Transonic.MIDI.System
 {
     public class MidiSystem
     {       
@@ -88,7 +88,6 @@ namespace Transonic.MIDI.Engine
                 outdev.close();
             }
         }
-
 
         public List<String> getInDevNameList()
         {

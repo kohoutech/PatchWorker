@@ -123,6 +123,13 @@ namespace Transonic.Patch
             }
         }
 
+//- mouse methods -------------------------------------------------------------
+
+        //called by canvas when user double clicks on title bar
+        public virtual void onTitleDoubleClick()
+        {
+        }
+
 //- panel methods -------------------------------------------------------------
 
         public PatchPanel panelHitTest(Point p)
@@ -236,10 +243,13 @@ namespace Transonic.Patch
             if (loader != null)
             {
                 box = loader.loadFromXML(boxNode);
-                foreach (XmlNode panelNode in boxNode.ChildNodes)
+                if (box != null)
                 {
-                    PatchPanel panel = PatchPanel.loadFromXML(box, panelNode);
-                    box.addPanel(panel, true);
+                    foreach (XmlNode panelNode in boxNode.ChildNodes)
+                    {
+                        PatchPanel panel = PatchPanel.loadFromXML(box, panelNode);
+                        box.addPanel(panel, true);
+                    }
                 }
             }
             return box;

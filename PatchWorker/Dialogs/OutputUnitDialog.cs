@@ -58,6 +58,24 @@ namespace PatchWorker.Dialogs
             progNum = 0;
         }
 
+        public OutputUnitDialog(PatchWorker _patchworker, String _name, String _devName, int _chanNum, int _progNum)
+            : this(_patchworker)
+        {
+            txtName.Text = _name;
+            cbxDevice.SelectedIndex = -1;
+            for (int i = 0; i < cbxDevice.Items.Count; i++)
+            {
+                String item = (String)cbxDevice.Items[i];
+                if (item.Equals(_devName)) {
+                    cbxDevice.SelectedIndex = i;
+                    break;            
+                }
+            }
+            cbxChannel.SelectedIndex = _chanNum - 1;
+            txtProgCount.Text = _progNum.ToString();
+        }
+
+
 
 //- button methods ------------------------------------------------------------
 

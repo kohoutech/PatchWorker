@@ -24,7 +24,7 @@ using System.Text;
 using System.Windows.Forms;
 
 using Transonic.MIDI;
-using Transonic.MIDI.Engine;
+using Transonic.MIDI.System;
 using Transonic.Patch;
 
 namespace PatchWorker.Graph
@@ -32,13 +32,17 @@ namespace PatchWorker.Graph
     public class PatchUnit : SystemUnit
     {
         public PatchWorker patchworker;
-        List<PatchCord> outUnitList;       //connections to units downstream - not used by output units
+        List<PatchCord> destList;       //connections to units downstream - not used by output units
         public ToolStripItem menuItem;
 
         public PatchUnit(PatchWorker _patchworker, String name) :  base(name)
         {
             patchworker = _patchworker;
-            outUnitList = new List<PatchCord>();
+            destList = new List<PatchCord>();
+        }
+
+        public virtual void editSettings()
+        {
         }
 
         public void delete()
@@ -67,19 +71,19 @@ namespace PatchWorker.Graph
         }
 
         //only used by input & modifier units - not called or used by output units
-        public virtual PatchCord connectOutUnit(PatchUnit outunit)
+        public virtual PatchCord connectDest(PatchUnit dest)
         {
-            PatchCord cord = new PatchCord(this, outunit);
-            outUnitList.Add(cord);
+            PatchCord cord = new PatchCord(this, dest);      //create cord & connect it between source & dest units
+            destList.Add(cord);
             return cord;
         }
 
-        public virtual void disconnectOutUnit(PatchUnit outunit)
+        public virtual void disconnectDest(PatchUnit dest)
         {
             PatchCord patchcord = null;
-            foreach (PatchCord cord in outUnitList)
+            foreach (PatchCord cord in destList)
             {
-                if (cord.outUnit == outunit)
+                if (cord.destUnit == dest)
                 {
                     patchcord = cord;
                     break;
@@ -87,18 +91,31 @@ namespace PatchWorker.Graph
             }
             if (patchcord != null)
             {
-                outUnitList.Remove(patchcord);
+                patchcord.disconnect();
+                destList.Remove(patchcord);
             }
         }
 
         public virtual void processMidiMsg(Transonic.MIDI.Message msg)
         {
-            foreach (PatchCord cord in outUnitList)
+            foreach (PatchCord cord in destList)
             {
                 //Console.WriteLine("sending msg to next unit in patch");
                 cord.processMidiMsg(msg);
             }
 
+        }
+    }
+
+//- exceptions ----------------------------------------------------------------
+
+    public class PatchUnitLoadException : Exception
+    {
+        public String unitName;
+
+        public PatchUnitLoadException(String _name, String msg) : base(msg)
+        {
+            unitName = _name;
         }
     }
 }

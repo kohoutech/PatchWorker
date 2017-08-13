@@ -57,6 +57,19 @@ namespace PatchWorker.UI
             unit.menuItem.Enabled = true;
         }
 
+//- settings methods -------------------------------------------------------------
+
+        //called by canvas when user double clicks on title bar
+        public override void onTitleDoubleClick()
+        {
+            unit.editSettings();
+            title = unit.name;
+            unit.menuItem.Text = unit.name;
+            canvas.Invalidate();            
+        }
+
+//- persistance ---------------------------------------------------------------
+
         public override void loadAttributesFromXML(XmlNode boxNode)
         {
             base.loadAttributesFromXML(boxNode);
@@ -65,7 +78,10 @@ namespace PatchWorker.UI
             String unitName = boxNode.Attributes["unitname"].Value;
             PatchWorker pw = PatchWorker.getPatchWorker();
             unit = pw.findUnit(unitName);
-            pw.addUnitToPatch(unit);               //add patch unit to graph
+            if (unit != null)
+            {
+                pw.addUnitToPatch(unit);               //add patch unit to graph
+            }
         }
 
         public override void saveAttributesToXML(XmlWriter xmlWriter)
@@ -84,7 +100,8 @@ namespace PatchWorker.UI
             //create unit box & set attrs
             PatchUnitBox box = new PatchUnitBox();
             box.loadAttributesFromXML(boxNode);
-
+            if (box.unit == null)
+                return null;
             return box;
         }
     }

@@ -25,11 +25,12 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.Xml;
+
 using PatchWorker.UI;
 using PatchWorker.Graph;
 using PatchWorker.Dialogs;
-
-using Transonic.MIDI.Engine;
+using Transonic.MIDI.System;
 using Transonic.Patch;
 
 namespace PatchWorker
@@ -52,7 +53,7 @@ namespace PatchWorker
 
             inputUnitMenuItems = 0;
             outputUnitMenuItems = 0;
-            patchworker.loadConfig();
+            patchworker.loadConfig(this);
 
             canvas = new PatchCanvas(this);
             canvas.Dock = DockStyle.Fill;
@@ -62,10 +63,30 @@ namespace PatchWorker
             this.Text = "PatchWorker [new patch]";
         }
 
+        public void loadSettings(XmlNode windowNode)
+        {
+            int posX = Convert.ToInt32(windowNode.Attributes["posX"].Value);
+            int posY = Convert.ToInt32(windowNode.Attributes["posY"].Value);
+            this.Location = new Point(posX, posY);
+            int width = Convert.ToInt32(windowNode.Attributes["width"].Value);
+            int height = Convert.ToInt32(windowNode.Attributes["height"].Value);
+            this.Size = new Size(width, height);
+        }
+
         //save settings & clean up on shut down
         private void PatchWindow_FormClosed(object sender, FormClosedEventArgs e)
         {
-            patchworker.shutdown();
+            patchworker.shutdown(this);
+        }
+
+        public void saveToXML(XmlWriter xmlWriter)
+        {
+            xmlWriter.WriteStartElement("patchwindow");
+            xmlWriter.WriteAttributeString("posX", this.Location.X.ToString());
+            xmlWriter.WriteAttributeString("posY", this.Location.Y.ToString());
+            xmlWriter.WriteAttributeString("width", this.Width.ToString());
+            xmlWriter.WriteAttributeString("height", this.Height.ToString());
+            xmlWriter.WriteEndElement();
         }
 
 //- file menu -----------------------------------------------------------------
@@ -226,7 +247,7 @@ namespace PatchWorker
 
         private void helpAboutMenuItem_Click(object sender, EventArgs e)
         {
-            String msg = "Patchworker\nversion 1.1.0\n" + 
+            String msg = "Patchworker\nversion 1.1.1\n" + 
                 "\xA9 Transonic Software 1997-2017\n" + 
                 "http://transonic.kohoutech.com";
             MessageBox.Show(msg, "About");

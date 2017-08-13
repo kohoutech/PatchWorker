@@ -57,7 +57,22 @@ namespace PatchWorker.Dialogs
             chanNum = -1;
         }
 
-//- button methods ------------------------------------------------------------
+        public InputUnitDialog(PatchWorker _patchworker, String _name, String _devName, int _chanNum) : this(_patchworker)
+        {
+            txtName.Text = _name;
+            cbxDevice.SelectedIndex = -1;
+            for (int i = 0; i < cbxDevice.Items.Count; i++)
+            {
+                String item = (String)cbxDevice.Items[i];
+                if (item.Equals(_devName)) {
+                    cbxDevice.SelectedIndex = i;
+                    break;            
+                }
+            }
+            cbxChannel.SelectedIndex = _chanNum - 1;            
+        }
+
+        //- button methods ------------------------------------------------------------
 
         private void validateControlData(object sender, EventArgs e)
         {
@@ -74,7 +89,14 @@ namespace PatchWorker.Dialogs
         private void btnOK_Click(object sender, EventArgs e)
         {
             name = txtName.Text;
-            devName = patchworker.midiSystem.inputDevices[cbxDevice.SelectedIndex].devName;
+            if (patchworker.midiSystem.inputDevices.Count > 0)
+            {
+                devName = patchworker.midiSystem.inputDevices[cbxDevice.SelectedIndex].devName;
+            }
+            else 
+            {
+                devName = null;
+            }
             chanNum = cbxChannel.SelectedIndex + 1;
             DialogResult = DialogResult.OK;
         }

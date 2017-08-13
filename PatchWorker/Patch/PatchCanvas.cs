@@ -38,6 +38,7 @@ namespace Transonic.Patch
 
         PatchBox selectedBox;
         PatchPanel targetPanel;
+        PatchLine selectedLine;
 
         Point newBoxOrg;
 
@@ -64,6 +65,7 @@ namespace Transonic.Patch
             connecting = false;
             selectedBox = null;
             targetPanel = null;
+            selectedLine = null;
         }
 
 //- patch methods -------------------------------------------------------------
@@ -175,8 +177,11 @@ namespace Transonic.Patch
         public void loadPatchBox(XmlNode boxNode)
         {
             PatchBox box = PatchBox.loadFromXML(boxNode);
-            box.canvas = this;
-            boxList.Add(box);
+            if (box != null)
+            {
+                box.canvas = this;
+                boxList.Add(box);
+            }
         }
 
         public void removePatchBox(PatchBox box)
@@ -193,10 +198,18 @@ namespace Transonic.Patch
 
         public void selectPatchBox(PatchBox box)
         {
+            //deselect current selection, if there is one
             if (selectedBox != null)
             {
-                selectedBox.setSelected(false);     //deselect current selection, if there is one
+                selectedBox.setSelected(false);
+                selectedBox = null;
             }
+            if (selectedLine != null)
+            {
+                selectedLine.setSelected(false);
+                selectedLine = null;
+            }
+
             boxList.Remove(box);                //remove the box from its place in z-order
             boxList.Add(box);                   //and add to end of list, making it topmost
             selectedBox = box;                  //mark box as selected for future operations
@@ -220,10 +233,21 @@ namespace Transonic.Patch
 
 //- line methods ---------------------------------------------------------------
 
+        public void addPatchLine(PatchLine line)
+        {
+            connectLine.connectDestJack(targetPanel);        //connect line to target box and input & output units in model
+            targetPanel.patchbox.setTargeted(false);
+            targetPanel = null;
+            Invalidate();
+        }
+
         public void loadPatchLine(XmlNode lineNode)
         {
             PatchLine line = PatchLine.loadFromXML(this, lineNode);
-            lineList.Add(line);
+            if (line != null)
+            {
+                lineList.Add(line);
+            }
         }
 
         //patch line will be connected to source jack, but may or may not be connected to dest jack
@@ -231,6 +255,26 @@ namespace Transonic.Patch
         {
             line.disconnect();
             lineList.Remove(line);
+            Invalidate();
+        }
+
+        public void selectPatchLine(PatchLine line)
+        {
+            //deselect current selection, if there is one
+            if (selectedBox != null)
+            {
+                selectedBox.setSelected(false);
+                selectedBox = null;
+            }
+            if (selectedLine != null)
+            {
+                selectedLine.setSelected(false);
+                selectedLine = null;
+            }
+
+            selectedLine = line;                 //mark line as selected for future operations
+            selectedLine.setSelected(true);      //and let it know it
+            Invalidate();
         }
 
 //- mouse handling ------------------------------------------------------------
@@ -242,42 +286,63 @@ namespace Transonic.Patch
             base.OnMouseDown(e);
             bool handled = false;
 
-            //go in reverse z-order so we check topmost first
-            for (int i = boxList.Count - 1; i >= 0; i--)
+            //check lines first - go in reverse z-order so we check topmost first
+            for (int i = lineList.Count - 1; i >= 0; i--)
             {
-                PatchBox box = boxList[i];
-                if (box.hitTest(e.Location))
+                PatchLine line = lineList[i];
+                if (line.hitTest(e.Location))
                 {
-                    selectPatchBox(box);
+                    selectPatchLine(line);
                     handled = true;
                     break;
                 }
             }
 
-            if (handled)        //we clicked somewhere inside a patchbox (and selected it), check if dragging or connecting
+            //check boxes - go in reverse z-order so we check topmost first
+            if (!handled)
             {
-                if (selectedBox.dragTest(e.Location))           //if we clicked on title panel
+                for (int i = boxList.Count - 1; i >= 0; i--)
                 {
-                    startDrag(e.Location);
-                }
-                else
-                {
-                    PatchPanel panel = selectedBox.panelHitTest(e.Location);
-                    if (panel != null && panel.canConnectOut())                     //if we clicked on out jack panel
+                    PatchBox box = boxList[i];
+                    if (box.hitTest(e.Location))
                     {
-                        startConnection(panel, e.Location);
+                        selectPatchBox(box);
+                        handled = true;
+                        break;
+                    }
+                }
+
+                if (handled)        //we clicked somewhere inside a patchbox (and selected it), check if dragging or connecting
+                {
+                    if (selectedBox.dragTest(e.Location))           //if we clicked on title panel
+                    {
+                        startDrag(e.Location);
+                    }
+                    else
+                    {
+                        PatchPanel panel = selectedBox.panelHitTest(e.Location);
+                        if (panel != null && panel.canConnectOut() && !panel.isConnected())  //if we clicked on unconnected out jack panel
+                        {
+                            startConnection(panel, e.Location);
+                        }
                     }
                 }
             }
 
-            else            //we clicked on a blank area of the canvas - deselect current selection if there is one
+            if (!handled)            //we clicked on a blank area of the canvas - deselect current selection if there is one
             {
                 if (selectedBox != null)
                 {
                     selectedBox.setSelected(false);
+                    selectedBox = null;
                     Invalidate();
                 }
-                selectedBox = null;
+                if (selectedLine != null)
+                {
+                    selectedLine.setSelected(false);
+                    selectedLine = null;
+                    Invalidate();
+                }
             }
         }
 
@@ -312,7 +377,7 @@ namespace Transonic.Patch
         protected override void OnMouseClick(MouseEventArgs e)
         {
             base.OnMouseClick(e);
-            if (selectedBox != null)
+            if (selectedBox != null && !dragging)
             {
                 PatchPanel panel = selectedBox.panelHitTest(e.Location);
                 if (panel != null)
@@ -322,6 +387,28 @@ namespace Transonic.Patch
             }
             Invalidate();
         }
+
+        protected override void OnMouseDoubleClick(MouseEventArgs e)
+        {
+            base.OnMouseDoubleClick(e);
+            if (selectedBox != null)
+            {
+                if (dragging)       //if we're dragging, then we've double clicked in the title bar
+                {
+                    selectedBox.onTitleDoubleClick();
+                }
+                else
+                {
+                    PatchPanel panel = selectedBox.panelHitTest(e.Location);
+                    if (panel != null)
+                    {
+                        panel.onDoubleClick(e.Location);
+                    }
+                }
+            }
+            Invalidate();
+        }
+
 
 //- keyboard handling ---------------------------------------------------------
 
@@ -334,6 +421,12 @@ namespace Transonic.Patch
                 {
                     removePatchBox(selectedBox);
                     selectedBox = null;
+                }
+
+                if (selectedLine != null)
+                {
+                    removePatchLine(selectedLine);
+                    selectedLine = null;
                 }
             }
         }
@@ -416,9 +509,7 @@ namespace Transonic.Patch
         {
             if (targetPanel != null)                              //drop connection on target box we are currently over
             {
-                connectLine.connectDestJack(targetPanel);        //connect line to tagret box and input & output units in model
-                targetPanel.patchbox.setTargeted(false);
-                targetPanel = null;
+                addPatchLine(connectLine);
             }
             else            //not over a target box, delete patch line
             {
@@ -426,7 +517,6 @@ namespace Transonic.Patch
             }
             connectLine = null;
             connecting = false;
-            Invalidate();
         }
         
 //- painting ------------------------------------------------------------------

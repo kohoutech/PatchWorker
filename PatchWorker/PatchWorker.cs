@@ -23,8 +23,9 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using System.IO;
+using System.Windows.Forms;
 
-using Transonic.MIDI.Engine;
+using Transonic.MIDI.System;
 using Transonic.Patch;
 using PatchWorker.Graph;
 using PatchWorker.UI;
@@ -71,15 +72,15 @@ namespace PatchWorker
             registerLoaders();
         }
 
-        public void shutdown()
+        public void shutdown(PatchWindow window)
         {
-            saveConfig();
+            saveConfig(window);
             midiSystem.shutdown();
         }
 
 //- configuration load/save ---------------------------------------------------
 
-        public void loadConfig()
+        public void loadConfig(PatchWindow window)
         {
             try
             {
@@ -88,6 +89,11 @@ namespace PatchWorker
 
                 foreach (XmlNode settingNode in xmlDoc.DocumentElement.ChildNodes)
                 {
+                    if (settingNode.Name.Equals("patchwindow"))
+                    {
+                        window.loadSettings(settingNode);
+                    }
+
                     if (settingNode.Name.Equals("units"))
                     {
                         loadUnits(settingNode);
@@ -104,20 +110,32 @@ namespace PatchWorker
         {
             foreach (XmlNode unitNode in unitsNode.ChildNodes)
             {
-                if (unitNode.Name.Equals("inputunit"))
+                try
                 {
-                    InputUnit inUnit = InputUnit.loadFromXML(this, unitNode);
-                    addInputUnit(inUnit);
+                    if (unitNode.Name.Equals("inputunit"))
+                    {
+                        InputUnit inUnit = InputUnit.loadFromXML(this, unitNode);
+                        addInputUnit(inUnit);
+                    }
+                    if (unitNode.Name.Equals("outputunit"))
+                    {
+                        OutputUnit outUnit = OutputUnit.loadFromXML(this, unitNode);
+                        addOutputUnit(outUnit);
+                    }
+                    if (unitNode.Name.Equals("modiferunit"))
+                    {
+                        //not implemented yet
+                    }
                 }
-                if (unitNode.Name.Equals("outputunit"))
+                catch (PatchUnitLoadException ex)
                 {
-                    OutputUnit outUnit = OutputUnit.loadFromXML(this, unitNode);
-                    addOutputUnit(outUnit);
+                    String msg = "unable to load unit " + ex.unitName + "\n" + ex.Message;
+                    MessageBox.Show(msg, "Load Error");
                 }
             }
         }
 
-        public void saveConfig()
+        public void saveConfig(PatchWindow window)
         {
             var settings = new XmlWriterSettings();
             settings.OmitXmlDeclaration = true;
@@ -127,9 +145,10 @@ namespace PatchWorker
             XmlWriter xmlWriter = XmlWriter.Create(CONFIGFILENAME, settings);
 
             xmlWriter.WriteStartDocument();
-            xmlWriter.WriteStartElement("patchworker");
+            xmlWriter.WriteStartElement("patchworker");        
             xmlWriter.WriteAttributeString("version", "1.1.0");
 
+            window.saveToXML(xmlWriter);
             saveUnits(xmlWriter);
 
             xmlWriter.WriteEndDocument();

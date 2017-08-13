@@ -37,7 +37,8 @@ namespace Transonic.Patch
 
         readonly Pen CONNECTORCOLOR = new Pen(Color.Red, 2.0f);
         readonly Pen SELECTEDCOLOR = new Pen(Color.Blue, 2.0f);
-
+        
+        //for connecting panels by user
         //new line starts at source panel's output jack, the input end follows the mouse until it is dropped on a target panel
         public PatchLine(PatchCanvas _canvas, PatchPanel _srcPanel, Point _destEnd)
         {
@@ -48,6 +49,7 @@ namespace Transonic.Patch
             isSelected = false;
         }
 
+        //for reloading existing connections from a stored patch
         public PatchLine(PatchCanvas _canvas, PatchPanel srcPanel, PatchPanel destPanel)
         {
             canvas = _canvas;
@@ -55,6 +57,8 @@ namespace Transonic.Patch
             connectDestJack(destPanel);
             isSelected = false;
         }
+
+//- connections ---------------------------------------------------------------
 
         public void connectSourceJack(PatchPanel _srcPanel)
         {
@@ -93,6 +97,28 @@ namespace Transonic.Patch
             destEnd = _destEnd;
         }
 
+//- displaying ----------------------------------------------------------------
+
+        public bool hitTest(Point p)
+        {
+            //bounding box
+            if (p.X < (srcEnd.X < destEnd.X ? srcEnd.X : destEnd.X) ||
+                p.X > (srcEnd.X > destEnd.X ? srcEnd.X : destEnd.X) ||
+                p.Y < (srcEnd.Y < destEnd.Y ? srcEnd.Y : destEnd.Y) ||
+                p.Y > (srcEnd.Y > destEnd.Y ? srcEnd.Y : destEnd.Y))
+                return false;
+
+            //if inside bounding box, calc distance from point to line
+            int lineX = destEnd.X - srcEnd.X;
+            int lineY = destEnd.Y - srcEnd.Y;
+            int pointX = srcEnd.X - p.X;
+            int pointY = srcEnd.Y - p.Y;
+            double lineLen = Math.Sqrt(lineX * lineX + lineY + lineY);
+            double projLine = (lineX * pointY - lineY * pointX);
+            double dist = Math.Abs(projLine / lineLen);
+            return (dist < 2.0);
+        }
+
         public void setSelected(bool _selected)
         {
             isSelected = _selected;
@@ -112,12 +138,16 @@ namespace Transonic.Patch
             int destBoxNum = Convert.ToInt32(lineNode.Attributes["destbox"].Value);
             int destPanelNum = Convert.ToInt32(lineNode.Attributes["destpanel"].Value);
 
+            PatchLine line = null;
             PatchBox sourceBox = canvas.findPatchBox(srcBoxNum);
-            PatchPanel sourcePanel = sourceBox.findPatchPanel(srcPanelNum);
             PatchBox destBox = canvas.findPatchBox(destBoxNum);
-            PatchPanel destPanel = destBox.findPatchPanel(destPanelNum);
+            if (sourceBox != null && destBox != null)
+            {
+                PatchPanel sourcePanel = sourceBox.findPatchPanel(srcPanelNum);
+                PatchPanel destPanel = destBox.findPatchPanel(destPanelNum);
 
-            PatchLine line = new PatchLine(canvas, sourcePanel, destPanel);
+                line = new PatchLine(canvas, sourcePanel, destPanel);
+            }
             return line;
         }
 

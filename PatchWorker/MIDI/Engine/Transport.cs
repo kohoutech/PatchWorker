@@ -24,7 +24,7 @@ using System.Text;
 
 using Transonic.MIDI;
 
-namespace Transonic.MIDI.Engine
+namespace Transonic.MIDI.System
 {
     public class Transport
     {

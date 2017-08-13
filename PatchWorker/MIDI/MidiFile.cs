@@ -23,7 +23,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
-using Transonic.MIDI.Engine;
+using Transonic.MIDI.System;
 
 //J Glatt's Midi page: http://midi.teragonaudio.com/tech/midifile.htm
 

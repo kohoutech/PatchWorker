@@ -24,7 +24,7 @@ using System.Text;
 using System.Xml;
 
 using Transonic.MIDI;
-using Transonic.MIDI.Engine;
+using Transonic.MIDI.System;
 using Transonic.Patch;
 using PatchWorker.UI;
 

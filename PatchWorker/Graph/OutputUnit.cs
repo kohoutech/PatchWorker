@@ -24,9 +24,10 @@ using System.Text;
 using System.Xml;
 
 using Transonic.MIDI;
-using Transonic.MIDI.Engine;
+using Transonic.MIDI.System;
 using Transonic.Patch;
 using PatchWorker.UI;
+using PatchWorker.Dialogs;
 
 namespace PatchWorker.Graph
 {
@@ -46,6 +47,24 @@ namespace PatchWorker.Graph
             channelNum = _channel;
             progCount = _progNum;
             started = false;            
+        }
+
+        public override void editSettings()
+        {
+            OutputUnitDialog unitdlg = new OutputUnitDialog(patchworker, name, outDevName, channelNum, progCount);
+            unitdlg.ShowDialog();
+            if (unitdlg.DialogResult == System.Windows.Forms.DialogResult.OK)
+            {
+                name = unitdlg.name;
+                if (!outDevName.Equals(unitdlg.devName))         //if we've changed input devices, restart new dev;
+                {
+                    stop();
+                    outDevName = unitdlg.devName;
+                    start();
+                }
+                channelNum = unitdlg.chanNum;
+                progCount = unitdlg.progNum;
+            }
         }
 
         public override List<PatchPanel> getPatchPanels(PatchBox _box)
@@ -91,13 +110,22 @@ namespace PatchWorker.Graph
 
 //- persistance ---------------------------------------------------------------
 
-        public static OutputUnit loadFromXML(PatchWorker _patchworker, XmlNode unitNode)
+        public static OutputUnit loadFromXML(PatchWorker patchworker, XmlNode unitNode)
         {
             String name = unitNode.Attributes["name"].Value;
             String devicename = unitNode.Attributes["devicename"].Value;
             int channel = Convert.ToInt32(unitNode.Attributes["channel"].Value);
             int progcount = Convert.ToInt32(unitNode.Attributes["progcount"].Value);
-            return new OutputUnit(_patchworker, name, devicename, channel, progcount);
+
+            OutputDevice outDev = patchworker.midiSystem.findOutputDevice(devicename);
+            if (outDev != null)
+            {
+                return new OutputUnit(patchworker, name, devicename, channel, progcount);
+            }
+            else
+            {
+                throw new PatchUnitLoadException(name, "no output device " + devicename + " found");
+            }
         }
 
         public void saveToXML(XmlWriter xmlWriter)

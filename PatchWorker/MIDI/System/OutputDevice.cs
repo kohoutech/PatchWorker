@@ -27,7 +27,7 @@ using Transonic.MIDI;
 
 // p/invoke calls and structs used with WINMM.DLL library taken from http://www.pinvoke.net
 
-namespace Transonic.MIDI.Engine
+namespace Transonic.MIDI.System
 {
     public class OutputDevice
     {
