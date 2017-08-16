@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 using System.Drawing;
 using System.Xml;
 
@@ -77,7 +78,7 @@ namespace PatchWorker.UI
             source.disconnectDest(dest);
         }
 
-        public override void onClick(Point pos)
+        public override void onClick(MouseEventArgs e)
         {            
         }
 

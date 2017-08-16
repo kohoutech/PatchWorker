@@ -34,11 +34,16 @@ namespace PatchWorker.Graph
         public PatchWorker patchworker;
         List<PatchCord> destList;       //connections to units downstream - not used by output units
         public ToolStripItem menuItem;
+        public Programmer programmer;
+        public int progCount;
 
         public PatchUnit(PatchWorker _patchworker, String name) :  base(name)
         {
             patchworker = _patchworker;
             destList = new List<PatchCord>();
+            menuItem = null;
+            programmer = null;
+            progCount = 0;
         }
 
         public virtual void editSettings()

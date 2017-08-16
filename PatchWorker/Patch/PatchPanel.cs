@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 using System.Drawing;
 using System.Xml;
 
@@ -121,7 +122,7 @@ namespace Transonic.Patch
 
 //- user input ----------------------------------------------------------------
 
-        public virtual void onClick(Point pos)
+        public virtual void onClick(MouseEventArgs e)
         {
         }
 

@@ -97,8 +97,14 @@ namespace PatchWorker.Graph
 
         public override void receiveMessage(byte[] data)
         {
-            Message msg = Message.getMessage(data, 0);          //convert incoming bytes into midi message
-            processMidiMsg(msg);                                //and send it on its way
+            Message msg = Message.getMessage(data, 0);                  //convert incoming bytes into midi message
+
+            if ((msg.msgClass == Message.MESSAGECLASS.CHANNEL) &&       //filter channel msgs by channel num
+                (((ChannelMessage)msg).channel == (channelNum - 1))  || 
+                (msg.msgClass == Message.MESSAGECLASS.SYSTEM))
+            {
+                processMidiMsg(msg);                                    //and send it on its way
+            }
         }
 
         public override void processMidiMsg(Message msg)

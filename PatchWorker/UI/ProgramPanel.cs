@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 using System.Drawing;
 using System.Xml;
 
@@ -31,11 +32,11 @@ namespace PatchWorker.UI
 {
     public class ProgramPanel : PatchPanel
     {
-        public int progNum;
+        OutputUnit unit;                        //will need to include modifier units too
+        public Programmer programmer;
+        int progNum;
         public int progMax;
         public Rectangle display;
-        public Point[] leftArrow;
-        public Point[] rightArrow;
 
         public ProgramPanel(PatchBox box)
             : base(box)
@@ -43,45 +44,47 @@ namespace PatchWorker.UI
             panelType = "ProgramPanel";
             connType = CONNECTIONTYPE.NEITHER;
             PatchUnitBox ubox = (PatchUnitBox)box;
-            OutputUnit unit = (OutputUnit)ubox.unit;
-            progNum = 1;
+            unit = (OutputUnit)ubox.unit;
+            programmer = unit.programmer;
             progMax = unit.progCount;
+            progNum = 0;
             frame = new Rectangle(0, 0, 100, 40);
             display = new Rectangle(20, 10, 60, 20);
-            leftArrow = new Point[] { new Point(5, 20), new Point(15, 10), new Point(15, 30) };
-            rightArrow = new Point[] { new Point(85, 10), new Point(95, 20), new Point(85, 30) };
         }
 
         public override void setPos(int xOfs, int yOfs)
         {
             base.setPos(xOfs, yOfs);
             display.Offset(xOfs, yOfs);
-            leftArrow[0].Offset(xOfs, yOfs);
-            leftArrow[1].Offset(xOfs, yOfs);
-            leftArrow[2].Offset(xOfs, yOfs);
-            rightArrow[0].Offset(xOfs, yOfs);
-            rightArrow[1].Offset(xOfs, yOfs);
-            rightArrow[2].Offset(xOfs, yOfs);
         }
 
-        public override void onClick(Point pos)
+        public override void onClick(MouseEventArgs e)
         {
-            PatchUnitBox unitbox = (PatchUnitBox)patchbox;
-            OutputUnit outUnit = (OutputUnit)unitbox.unit;
-            int xpos = pos.X - frame.X;
-            if (xpos > 80)
+            if (e.Button == MouseButtons.Right)
             {
-                progNum++;
-                if (progNum > progMax) progNum = 1;
-                outUnit.sendProgramChange(progNum);
-            }
-            else if (xpos < 20)
-            {
-                progNum--;
-                if (progNum < 1) progNum = progMax;
-                outUnit.sendProgramChange(progNum);
+                ContextMenuStrip cm = new ContextMenuStrip();
+                cm.ItemClicked += new ToolStripItemClickedEventHandler(ProgMenuClicked);
+                for (int i = 0; i < programmer.progCount; i++)
+                {
+                    ToolStripButton item = new ToolStripButton(programmer.programs[i]);
+                    item.Checked = (i == progNum);
+                    item.Tag = i;
+                    cm.Items.Add(item);                    
+                }
+
+                cm.Show(patchbox.canvas, e.Location);                
             }
         }
+
+        void ProgMenuClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+            ToolStripButton item = (ToolStripButton)e.ClickedItem;
+            progNum = (Int32)item.Tag;
+            patchbox.canvas.Invalidate();
+            unit.sendProgramChange(progNum);
+        }
+
+//- painting ------------------------------------------------------------------
 
         public override void paint(Graphics g)
         {
@@ -89,16 +92,19 @@ namespace PatchWorker.UI
 
             //controls
             g.DrawRectangle(Pens.Black, frame);
-            g.FillRectangle(Brushes.Black, display);
-            g.FillPolygon(Brushes.Red, leftArrow);
-            g.FillPolygon(Brushes.Red, rightArrow);
+            //g.FillRectangle(Brushes.Black, display);
+            //g.FillPolygon(Brushes.Red, leftArrow);
+            //g.FillPolygon(Brushes.Red, rightArrow);
 
             //display
             StringFormat stringFormat = new StringFormat();
             stringFormat.Alignment = StringAlignment.Center;
             stringFormat.LineAlignment = StringAlignment.Center;
-            g.DrawString(progNum.ToString(), SystemFonts.DefaultFont, Brushes.Red, display, stringFormat);
+            //g.DrawString(progNum.ToString(), SystemFonts.DefaultFont, Brushes.Red, display, stringFormat);
+            g.DrawString(programmer.programs[progNum], SystemFonts.DefaultFont, Brushes.Red, frame, stringFormat);
         }
+
+//- persistance ---------------------------------------------------------------
 
         public override void loadAttributesFromXML(XmlNode panelNode)
         {

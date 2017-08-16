@@ -36,16 +36,16 @@ namespace PatchWorker.Graph
         OutputDevice outDev;
         String outDevName;
         int channelNum;
-        public int progCount;
         bool started;
 
         //user cons
-        public OutputUnit(PatchWorker _patchworker, String name, String _outDevName, int _channel, int _progNum)
+        public OutputUnit(PatchWorker _patchworker, String name, String _outDevName, int _channel, int _progCount)
             : base(_patchworker, name)
         {
             outDevName = _outDevName;
             channelNum = _channel;
-            progCount = _progNum;
+            progCount = _progCount;
+            programmer = new Programmer(this);
             started = false;            
         }
 
@@ -96,8 +96,11 @@ namespace PatchWorker.Graph
         {
             if (outDev != null)
             {
-                Console.WriteLine("OUTPUT UNIT: sending msg to output device " + outDev.devName);
-                outDev.sendMessage(msg.getDataBytes());                    
+                if (msg.msgClass == Message.MESSAGECLASS.CHANNEL)       //if channel msg, route to output device
+                {
+                    ((ChannelMessage)msg).channel = channelNum - 1;
+                }
+                outDev.sendMessage(msg.getDataBytes());
             }
         }
 
@@ -112,6 +115,7 @@ namespace PatchWorker.Graph
 
         public static OutputUnit loadFromXML(PatchWorker patchworker, XmlNode unitNode)
         {
+            OutputUnit result = null;
             String name = unitNode.Attributes["name"].Value;
             String devicename = unitNode.Attributes["devicename"].Value;
             int channel = Convert.ToInt32(unitNode.Attributes["channel"].Value);
@@ -120,12 +124,25 @@ namespace PatchWorker.Graph
             OutputDevice outDev = patchworker.midiSystem.findOutputDevice(devicename);
             if (outDev != null)
             {
-                return new OutputUnit(patchworker, name, devicename, channel, progcount);
+                result = new OutputUnit(patchworker, name, devicename, channel, progcount);
             }
             else
             {
                 throw new PatchUnitLoadException(name, "no output device " + devicename + " found");
             }
+
+            //load programmer for unit
+            if (result != null)
+            {
+                foreach (XmlNode node in unitNode.ChildNodes)
+                {
+                    if (node.Name.Equals("programmer"))
+                    {
+                        result.programmer = Programmer.loadFromXML(result, node);
+                    }
+                }
+            }
+            return result;
         }
 
         public void saveToXML(XmlWriter xmlWriter)
@@ -135,7 +152,13 @@ namespace PatchWorker.Graph
             xmlWriter.WriteAttributeString("devicename", outDevName);
             xmlWriter.WriteAttributeString("channel", channelNum.ToString());
             xmlWriter.WriteAttributeString("progcount", progCount.ToString());
+            if (programmer != null)
+            {
+                programmer.saveToXML(xmlWriter);
+            }
             xmlWriter.WriteEndElement();
         }
     }
 }
+
+//Console.WriteLine("There is no sun in the shadow of the wizard");

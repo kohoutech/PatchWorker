@@ -38,7 +38,7 @@ namespace Transonic.Patch
 
         PatchBox selectedBox;
         PatchPanel targetPanel;
-        PatchLine selectedLine;
+        PatchLine selectedLine;        
 
         Point newBoxOrg;
 
@@ -382,7 +382,7 @@ namespace Transonic.Patch
                 PatchPanel panel = selectedBox.panelHitTest(e.Location);
                 if (panel != null)
                 {
-                    panel.onClick(e.Location);
+                    panel.onClick(e);
                 }
             }
             Invalidate();

@@ -229,15 +229,23 @@ namespace Transonic.MIDI
 //  CHANNEL MESSAGES
 //-----------------------------------------------------------------------------
 
-    public class NoteOffMessage : Message
+    public class ChannelMessage : Message
     {
         public int channel;
+
+        public ChannelMessage(int status, int _channel) : base(status)
+        {
+            channel = _channel;
+        }
+    }
+
+    public class NoteOffMessage : ChannelMessage   //0x80
+    {
         public int noteNumber;
         public int velocity;
 
-        public NoteOffMessage(byte[] data, int ofs, int _channel) : base(0x80)
+        public NoteOffMessage(byte[] data, int ofs, int _channel) : base(0x80, _channel)
         {
-            channel = _channel;
             noteNumber = (int)data[ofs + 1];
             velocity = (int)data[ofs + 2];
         }
@@ -257,15 +265,13 @@ namespace Transonic.MIDI
         }
     }
 
-    public class NoteOnMessage : Message
+    public class NoteOnMessage : ChannelMessage     //0x90
     {
-        public int channel;
         public int noteNumber;
         public int velocity;
 
-        public NoteOnMessage(byte[] data, int ofs, int _channel) : base(0x90)
+        public NoteOnMessage(byte[] data, int ofs, int _channel) : base(0x90, _channel)
         {
-            channel = _channel;
             noteNumber = (int)data[ofs + 1];
             velocity = (int)data[ofs + 2];
         }
@@ -285,16 +291,14 @@ namespace Transonic.MIDI
         }
     }
 
-    public class AftertouchMessage : Message
+    public class AftertouchMessage : ChannelMessage     //0xA0
     {
-        public int channel;
         public int noteNumber;
         public int pressure;
 
         public AftertouchMessage(byte[] data, int ofs, int _channel)
-            : base(0xa0)
+            : base(0xa0, _channel)
         {
-            channel = _channel;
             noteNumber = (int)data[ofs + 1];
             pressure = (int)data[ofs + 2];
         }
@@ -309,16 +313,14 @@ namespace Transonic.MIDI
         }
     }
 
-    public class ControllerMessage : Message
+    public class ControllerMessage : ChannelMessage     //0xB0
     {
-        public int channel;
         public int controllerNumber;
         public int controllerValue;
 
         public ControllerMessage(byte[] data, int ofs, int _channel)
-            : base(0xb0)
+            : base(0xb0, _channel)
         {
-            channel = _channel;
             controllerNumber = (int)data[ofs + 1];
             controllerValue = (int)data[ofs + 2];
         }
@@ -338,22 +340,19 @@ namespace Transonic.MIDI
         }
     }
 
-    public class PatchChangeMessage : Message       //0xC0
+    public class PatchChangeMessage : ChannelMessage       //0xC0
     {
-        public int channel;
         public int patchNumber;
 
         public PatchChangeMessage(int _channel, byte b1)
-            : base(0xc0)
+            : base(0xc0, _channel)
         {
-            channel = _channel;
             patchNumber = (int)b1;
         }
 
         public PatchChangeMessage(byte[] data, int ofs, int _channel)
-            : base(0xc0)
+            : base(0xc0, _channel)
         {
-            channel = _channel;
             patchNumber = (int)data[ofs + 1];
         }
 
@@ -371,15 +370,13 @@ namespace Transonic.MIDI
         }
     }
 
-    public class ChannelPressureMessage : Message       //0xD0
+    public class ChannelPressureMessage : ChannelMessage       //0xD0
     {
-        public int channel;
         public int pressure;
 
         public ChannelPressureMessage(byte[] data, int ofs, int _channel)
-            : base(0xd0)
+            : base(0xd0, _channel)
         {
-            channel = _channel;
             pressure = (int)data[ofs + 1];
         }
 
@@ -392,15 +389,13 @@ namespace Transonic.MIDI
         }
     }
 
-    public class PitchWheelMessage : Message
+    public class PitchWheelMessage : ChannelMessage     //0xE0
     {
-        public int channel;
         public int wheel;
 
         public PitchWheelMessage(byte[] data, int ofs, int _channel)
-            : base(0xe0)
+            : base(0xe0, _channel)
         {
-            channel = _channel;
             int b1 = (int)data[ofs + 1];
             int b2 = (int)data[ofs + 2];
             wheel = b1 * 128 + b2;

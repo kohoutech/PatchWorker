@@ -247,7 +247,7 @@ namespace PatchWorker
 
         private void helpAboutMenuItem_Click(object sender, EventArgs e)
         {
-            String msg = "Patchworker\nversion 1.1.1\n" + 
+            String msg = "Patchworker\nversion 1.1.2\n" + 
                 "\xA9 Transonic Software 1997-2017\n" + 
                 "http://transonic.kohoutech.com";
             MessageBox.Show(msg, "About");
