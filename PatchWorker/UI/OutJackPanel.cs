@@ -71,14 +71,17 @@ namespace PatchWorker.UI
 
         public override void breakConnection(PatchPanel destPanel)
         {
-            PatchUnitBox srcbox = (PatchUnitBox)patchbox;
-            PatchUnit source = srcbox.unit;
-            PatchUnitBox destbox = (PatchUnitBox)destPanel.patchbox;
-            PatchUnit dest = destbox.unit;
-            source.disconnectDest(dest);
+            if (destPanel != null)
+            {
+                PatchUnitBox srcbox = (PatchUnitBox)patchbox;
+                PatchUnit source = srcbox.unit;
+                PatchUnitBox destbox = (PatchUnitBox)destPanel.patchbox;
+                PatchUnit dest = destbox.unit;
+                source.disconnectDest(dest);
+            }
         }
 
-        public override void onClick(MouseEventArgs e)
+        public override void onClick(Point pos)
         {            
         }
 

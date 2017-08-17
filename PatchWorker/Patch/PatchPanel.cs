@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms;
 using System.Drawing;
 using System.Xml;
 
@@ -42,7 +41,7 @@ namespace Transonic.Patch
 
         public PatchBox patchbox;
         public Rectangle frame;
-        public PatchLine connector;
+        public List<PatchLine> connectors;
         public CONNECTIONTYPE connType;
 
         public PatchPanel(PatchBox box)
@@ -52,14 +51,14 @@ namespace Transonic.Patch
             patchbox = box;
 
             frame = new Rectangle(0, 0, patchbox.frame.Width, 40);
-            connector = null;
+            connectors = new List<PatchLine>();
             connType = CONNECTIONTYPE.NEITHER;
         }
 
         public virtual void setPos(int xOfs, int yOfs)
         {
             frame.Offset(xOfs, yOfs);
-            if (connector != null)
+            foreach(PatchLine connector in connectors)
             {
                 if (connType == CONNECTIONTYPE.SOURCE)
                 {
@@ -97,17 +96,17 @@ namespace Transonic.Patch
 
         public virtual void connectLine(PatchLine line)
         {
-            connector = line;
+            connectors.Add(line);
         }
 
         public virtual void disconnectLine(PatchLine line)
         {
-            connector = null;
+            connectors.Remove(line);                
         }
 
         public bool isConnected()
         {
-            return (connector != null);
+            return (connectors.Count != 0);
         }
 
         //called on source panel when a patch line connects two panels, so matching connection can be made in the backing model
@@ -122,7 +121,7 @@ namespace Transonic.Patch
 
 //- user input ----------------------------------------------------------------
 
-        public virtual void onClick(MouseEventArgs e)
+        public virtual void onClick(Point pos)
         {
         }
 

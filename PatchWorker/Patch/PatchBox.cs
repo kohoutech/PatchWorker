@@ -182,9 +182,9 @@ namespace Transonic.Patch
             List<PatchLine> connections = new List<PatchLine>();
             foreach (PatchPanel panel in panels)
             {
-                if (panel.connector != null)
+                if (panel.connectors != null)
                 {
-                    connections.Add(panel.connector);
+                    connections.AddRange(panel.connectors);
                 }
             }
             return connections;

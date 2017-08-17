@@ -49,7 +49,7 @@ namespace PatchWorker.UI
             progMax = unit.progCount;
             progNum = 0;
             frame = new Rectangle(0, 0, 100, 40);
-            display = new Rectangle(20, 10, 60, 20);
+            display = new Rectangle(5, 5, 90, 30);
         }
 
         public override void setPos(int xOfs, int yOfs)
@@ -58,22 +58,19 @@ namespace PatchWorker.UI
             display.Offset(xOfs, yOfs);
         }
 
-        public override void onClick(MouseEventArgs e)
+        public override void onRightClick(Point pos)
         {
-            if (e.Button == MouseButtons.Right)
+            ContextMenuStrip cm = new ContextMenuStrip();
+            cm.ItemClicked += new ToolStripItemClickedEventHandler(ProgMenuClicked);
+            for (int i = 0; i < programmer.progCount; i++)
             {
-                ContextMenuStrip cm = new ContextMenuStrip();
-                cm.ItemClicked += new ToolStripItemClickedEventHandler(ProgMenuClicked);
-                for (int i = 0; i < programmer.progCount; i++)
-                {
-                    ToolStripButton item = new ToolStripButton(programmer.programs[i]);
-                    item.Checked = (i == progNum);
-                    item.Tag = i;
-                    cm.Items.Add(item);                    
-                }
-
-                cm.Show(patchbox.canvas, e.Location);                
+                ToolStripButton item = new ToolStripButton(programmer.programs[i]);
+                item.Checked = (i == progNum);
+                item.Tag = i;
+                cm.Items.Add(item);
             }
+
+            cm.Show(patchbox.canvas, pos);
         }
 
         void ProgMenuClicked(object sender, ToolStripItemClickedEventArgs e)
@@ -92,16 +89,13 @@ namespace PatchWorker.UI
 
             //controls
             g.DrawRectangle(Pens.Black, frame);
-            //g.FillRectangle(Brushes.Black, display);
-            //g.FillPolygon(Brushes.Red, leftArrow);
-            //g.FillPolygon(Brushes.Red, rightArrow);
+            g.FillRectangle(Brushes.Black, display);
 
             //display
             StringFormat stringFormat = new StringFormat();
             stringFormat.Alignment = StringAlignment.Center;
             stringFormat.LineAlignment = StringAlignment.Center;
-            //g.DrawString(progNum.ToString(), SystemFonts.DefaultFont, Brushes.Red, display, stringFormat);
-            g.DrawString(programmer.programs[progNum], SystemFonts.DefaultFont, Brushes.Red, frame, stringFormat);
+            g.DrawString(programmer.programs[progNum], SystemFonts.DefaultFont, Brushes.Lime, display, stringFormat);
         }
 
 //- persistance ---------------------------------------------------------------
