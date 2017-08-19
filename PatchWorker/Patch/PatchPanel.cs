@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Transonic Patch Library
-Copyright (C) 2005-2017  George E Greaney
+Copyright (C) 1995-2017  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -110,8 +110,9 @@ namespace Transonic.Patch
         }
 
         //called on source panel when a patch line connects two panels, so matching connection can be made in the backing model
-        public virtual void makeConnection(PatchPanel destPanel)
-        {            
+        public virtual iPatchConnector makeConnection(PatchPanel destPanel)
+        {
+            return null;
         }
 
         //called on source panel when two panels are disconnected, so matching connection can be ended in the backing model

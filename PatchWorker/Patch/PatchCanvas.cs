@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Transonic Patch Library
-Copyright (C) 2005-2017  George E Greaney
+Copyright (C) 1995-2017  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -239,7 +239,7 @@ namespace Transonic.Patch
 
         public void addPatchLine(PatchLine line)
         {
-            connectLine.connectDestJack(targetPanel);        //connect line to target box and input & output units in model
+            line.connectDestJack(targetPanel);              //connect line to target box and input & output units in model
             targetPanel.patchbox.setTargeted(false);
             targetPanel = null;
             Invalidate();
@@ -381,7 +381,11 @@ namespace Transonic.Patch
         protected override void OnMouseDoubleClick(MouseEventArgs e)
         {
             base.OnMouseDoubleClick(e);
-            if (selectedBox != null)
+            if (selectedLine != null)
+            {
+                selectedLine.onDoubleClick(e.Location);
+            } 
+            else if (selectedBox != null)
             {
                 if (dragging)       //if we're dragging, then we've double clicked in the title bar
                 {

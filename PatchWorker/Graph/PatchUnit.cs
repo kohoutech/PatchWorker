@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 2005-2017  George E Greaney
+Copyright (C) 1995-2017  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms;
 
 using Transonic.MIDI;
 using Transonic.MIDI.System;
@@ -33,7 +32,7 @@ namespace PatchWorker.Graph
     {
         public PatchWorker patchworker;
         List<PatchCord> destList;       //connections to units downstream - not used by output units
-        public ToolStripItem menuItem;
+        public System.Windows.Forms.ToolStripItem menuItem;
         public Programmer programmer;
         public int progCount;
 
@@ -55,7 +54,7 @@ namespace PatchWorker.Graph
             patchworker.removeUnitFromPatch(this);
         }
 
-        public void setMenuItem(ToolStripItem _menuItem)
+        public void setMenuItem(System.Windows.Forms.ToolStripItem _menuItem)
         {
             menuItem = _menuItem;
         }
@@ -101,11 +100,11 @@ namespace PatchWorker.Graph
             }
         }
 
-        public virtual void processMidiMsg(Transonic.MIDI.Message msg)
+        public virtual void processMidiMsg(Message _msg)
         {
             foreach (PatchCord cord in destList)
             {
-                //Console.WriteLine("sending msg to next unit in patch");
+                Message msg = _msg.copy();          //make a new copy of message for each cord
                 cord.processMidiMsg(msg);
             }
 
@@ -124,3 +123,5 @@ namespace PatchWorker.Graph
         }
     }
 }
+
+//Console.WriteLine("there's no sun in the shadow of the Wizard");

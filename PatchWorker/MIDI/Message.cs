@@ -187,6 +187,11 @@ namespace Transonic.MIDI
             varLenCount = 0;
         }
 
+        public Message copy()
+        {
+            return (Message)this.MemberwiseClone();
+        }
+
         virtual public byte[] getDataBytes() 
         {
             return null;

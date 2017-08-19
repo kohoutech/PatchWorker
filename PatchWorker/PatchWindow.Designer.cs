@@ -32,7 +32,7 @@
             this.PatchStatus = new System.Windows.Forms.StatusStrip();
             this.savePatchDialog = new System.Windows.Forms.SaveFileDialog();
             this.openPatchDialog = new System.Windows.Forms.OpenFileDialog();
-            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.PatchMenuStrip = new System.Windows.Forms.MenuStrip();
             this.fileMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.newFileMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openFileMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -47,7 +47,13 @@
             this.addOutputUnitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuStrip1.SuspendLayout();
+            this.PatchToolStrip = new System.Windows.Forms.ToolStrip();
+            this.newPatchToolStripButton = new System.Windows.Forms.ToolStripButton();
+            this.openPatchToolStripButton = new System.Windows.Forms.ToolStripButton();
+            this.savePatchToolStripButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.PatchMenuStrip.SuspendLayout();
+            this.PatchToolStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // PatchStatus
@@ -66,17 +72,17 @@
             // 
             this.openPatchDialog.DefaultExt = "pwk";
             // 
-            // menuStrip1
+            // PatchMenuStrip
             // 
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.PatchMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileMenuItem,
             this.unitMenuItem,
             this.helpToolStripMenuItem});
-            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(584, 24);
-            this.menuStrip1.TabIndex = 9;
-            this.menuStrip1.Text = "menuStrip1";
+            this.PatchMenuStrip.Location = new System.Drawing.Point(0, 0);
+            this.PatchMenuStrip.Name = "PatchMenuStrip";
+            this.PatchMenuStrip.Size = new System.Drawing.Size(584, 24);
+            this.PatchMenuStrip.TabIndex = 9;
+            this.PatchMenuStrip.Text = "menuStrip1";
             // 
             // fileMenuItem
             // 
@@ -198,23 +204,75 @@
             this.aboutToolStripMenuItem.Text = "&About...";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.helpAboutMenuItem_Click);
             // 
+            // PatchToolStrip
+            // 
+            this.PatchToolStrip.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
+            this.PatchToolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.newPatchToolStripButton,
+            this.openPatchToolStripButton,
+            this.savePatchToolStripButton,
+            this.toolStripSeparator2});
+            this.PatchToolStrip.Location = new System.Drawing.Point(0, 24);
+            this.PatchToolStrip.Name = "PatchToolStrip";
+            this.PatchToolStrip.Size = new System.Drawing.Size(584, 25);
+            this.PatchToolStrip.TabIndex = 10;
+            this.PatchToolStrip.Text = "toolStrip1";
+            // 
+            // newPatchToolStripButton
+            // 
+            this.newPatchToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.newPatchToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("newPatchToolStripButton.Image")));
+            this.newPatchToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.newPatchToolStripButton.Name = "newPatchToolStripButton";
+            this.newPatchToolStripButton.Size = new System.Drawing.Size(23, 22);
+            this.newPatchToolStripButton.Text = "&New Patch";
+            this.newPatchToolStripButton.Click += new System.EventHandler(this.patchNewMenuItem_Click);
+            // 
+            // openPatchToolStripButton
+            // 
+            this.openPatchToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.openPatchToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("openPatchToolStripButton.Image")));
+            this.openPatchToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.openPatchToolStripButton.Name = "openPatchToolStripButton";
+            this.openPatchToolStripButton.Size = new System.Drawing.Size(23, 22);
+            this.openPatchToolStripButton.Text = "&Open Patch";
+            this.openPatchToolStripButton.Click += new System.EventHandler(this.patchLoadMenuItem_Click);
+            // 
+            // savePatchToolStripButton
+            // 
+            this.savePatchToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.savePatchToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("savePatchToolStripButton.Image")));
+            this.savePatchToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.savePatchToolStripButton.Name = "savePatchToolStripButton";
+            this.savePatchToolStripButton.Size = new System.Drawing.Size(23, 22);
+            this.savePatchToolStripButton.Text = "&Save Patch";
+            this.savePatchToolStripButton.Click += new System.EventHandler(this.patchSaveMenuItem_Click);
+            // 
+            // toolStripSeparator2
+            // 
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
+            // 
             // PatchWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(584, 361);
+            this.Controls.Add(this.PatchToolStrip);
             this.Controls.Add(this.PatchStatus);
-            this.Controls.Add(this.menuStrip1);
+            this.Controls.Add(this.PatchMenuStrip);
             this.DoubleBuffered = true;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MainMenuStrip = this.menuStrip1;
+            this.MainMenuStrip = this.PatchMenuStrip;
             this.MinimumSize = new System.Drawing.Size(250, 250);
             this.Name = "PatchWindow";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "PatchWorker";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.PatchWindow_FormClosed);
-            this.menuStrip1.ResumeLayout(false);
-            this.menuStrip1.PerformLayout();
+            this.PatchMenuStrip.ResumeLayout(false);
+            this.PatchMenuStrip.PerformLayout();
+            this.PatchToolStrip.ResumeLayout(false);
+            this.PatchToolStrip.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -225,7 +283,7 @@
         private System.Windows.Forms.StatusStrip PatchStatus;
         private System.Windows.Forms.SaveFileDialog savePatchDialog;
         private System.Windows.Forms.OpenFileDialog openPatchDialog;
-        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.MenuStrip PatchMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem fileMenuItem;
         private System.Windows.Forms.ToolStripMenuItem newFileMenuItem;
         private System.Windows.Forms.ToolStripMenuItem openFileMenuItem;
@@ -240,6 +298,11 @@
         private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addOutputUnitMenuItem;
+        private System.Windows.Forms.ToolStrip PatchToolStrip;
+        private System.Windows.Forms.ToolStripButton newPatchToolStripButton;
+        private System.Windows.Forms.ToolStripButton openPatchToolStripButton;
+        private System.Windows.Forms.ToolStripButton savePatchToolStripButton;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
     }
 }
 

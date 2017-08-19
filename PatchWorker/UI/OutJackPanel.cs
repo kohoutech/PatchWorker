@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 2005-2017  George E Greaney
+Copyright (C) 1995-2017  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -60,13 +60,14 @@ namespace PatchWorker.UI
             return new Point(outJack.Left + outJack.Width / 2, outJack.Top + outJack.Height / 2);
         }
 
-        public override void makeConnection(PatchPanel destPanel)
+        public override iPatchConnector makeConnection(PatchPanel destPanel)
         {
             PatchUnitBox srcbox = (PatchUnitBox)patchbox;
             PatchUnit source = srcbox.unit;
             PatchUnitBox destbox = (PatchUnitBox)destPanel.patchbox;
             PatchUnit dest = destbox.unit;
-            source.connectDest(dest);
+            iPatchConnector patchCord = source.connectDest(dest);
+            return patchCord;
         }
 
         public override void breakConnection(PatchPanel destPanel)

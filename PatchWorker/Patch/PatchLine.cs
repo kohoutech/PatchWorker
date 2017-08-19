@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Transonic Patch Library
-Copyright (C) 2005-2017  George E Greaney
+Copyright (C) 1995-2017  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -33,6 +33,8 @@ namespace Transonic.Patch
         public Point srcEnd;
         public PatchPanel destPanel;
         public Point destEnd;
+        public iPatchConnector connector;       //connector in the backing model
+
         public bool isSelected;
 
         readonly Pen CONNECTORCOLOR = new Pen(Color.Red, 2.0f);
@@ -46,6 +48,7 @@ namespace Transonic.Patch
             connectSourceJack(_srcPanel);
             destPanel = null;
             destEnd = _destEnd;
+            connector = null;
             isSelected = false;
         }
 
@@ -72,7 +75,8 @@ namespace Transonic.Patch
             destPanel = _destPanel;
             destEnd = destPanel.getConnectionPoint();
             destPanel.connectLine(this);                            //connect line & dest panel in view            
-            srcPanel.makeConnection(destPanel);                     //connect panels in model
+            connector = srcPanel.makeConnection(destPanel);                     //connect panels in model
+            connector.setLine(this);
         }
 
         public void disconnect()
@@ -124,6 +128,20 @@ namespace Transonic.Patch
             isSelected = _selected;
         }
 
+//- user input ----------------------------------------------------------------
+
+        public void onDoubleClick(Point pos)
+        {
+            connector.onDoubleClick(pos);
+        }
+
+        public void onRightClick(Point pos)
+        {
+            connector.onRightClick(pos);
+        }
+
+//- painting ------------------------------------------------------------------
+
         public void paint(Graphics g)
         {
             g.DrawLine(isSelected ? SELECTEDCOLOR : CONNECTORCOLOR, srcEnd, destEnd);
@@ -147,6 +165,7 @@ namespace Transonic.Patch
                 PatchPanel destPanel = destBox.findPatchPanel(destPanelNum);
 
                 line = new PatchLine(canvas, sourcePanel, destPanel);
+                line.connector.loadFromXML(lineNode);
             }
             return line;
         }
@@ -158,6 +177,9 @@ namespace Transonic.Patch
             xmlWriter.WriteAttributeString("sourcepanel", srcPanel.panelNum.ToString());
             xmlWriter.WriteAttributeString("destbox", destPanel.patchbox.boxNum.ToString());
             xmlWriter.WriteAttributeString("destpanel", destPanel.panelNum.ToString());
+
+            connector.saveToXML(xmlWriter);         //save model attributes
+
             xmlWriter.WriteEndElement();
         }
     }

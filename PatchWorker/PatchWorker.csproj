@@ -73,6 +73,12 @@
     <Compile Include="Dialogs\OutputUnitDialog.Designer.cs">
       <DependentUpon>OutputUnitDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Dialogs\PatchCordDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\PatchCordDialog.Designer.cs">
+      <DependentUpon>PatchCordDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Graph\InputUnit.cs" />
     <Compile Include="Graph\ModifierUnit.cs" />
     <Compile Include="Graph\OutputUnit.cs" />
@@ -116,9 +122,16 @@
     <Compile Include="Dialogs\InputUnitDialog.Designer.cs">
       <DependentUpon>InputUnitDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Patch\iPatchConnector.cs" />
     <Compile Include="UI\ProgramPanel.cs" />
+    <Compile Include="Widget\KeyboardBar.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <EmbeddedResource Include="Dialogs\OutputUnitDialog.resx">
       <DependentUpon>OutputUnitDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\PatchCordDialog.resx">
+      <DependentUpon>PatchCordDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="PatchWindow.resx">
       <DependentUpon>PatchWindow.cs</DependentUpon>
@@ -138,6 +151,9 @@
     <EmbeddedResource Include="Dialogs\InputUnitDialog.resx">
       <DependentUpon>InputUnitDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Widget\KeyboardBar.resx">
+      <DependentUpon>KeyboardBar.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="Kohoutech.cer" />
     <None Include="Kohoutech.pfx" />
     <None Include="Properties\Settings.settings">
@@ -155,8 +171,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>if $(ConfigurationName) == Release (
+  $(TargetDir)\release.bat
+)</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
