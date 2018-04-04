@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Transonic MIDI Library
-Copyright (C) 1995-2017  George E Greaney
+Copyright (C) 1995-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -23,7 +23,10 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace Transonic.MIDI.System
+using Transonic.MIDI;
+using Transonic.MIDI.System;
+
+namespace Transonic.MIDI.Engine
 {
     public class MidiTimer
     {
@@ -54,6 +57,16 @@ namespace Transonic.MIDI.System
             timerProc = timerCallback;          //set callback func
         }
 
+        public void start(uint msec)
+        {
+            stop();         //stop prev timer
+
+            id = timeSetEvent(msec, 0, timerProc, UIntPtr.Zero, (uint)(TIME_CALLBACK_FUNCTION | TIME_PERIODIC));
+            if (id == 0)
+                throw new Exception("timeSetEvent error");
+            //Console.WriteLine("started timer " + id.ToString());
+        }
+
         public void stop()
         {
             if (id != 0)
@@ -62,16 +75,6 @@ namespace Transonic.MIDI.System
                 //Console.WriteLine("stopped timer " + id.ToString());
                 id = 0;
             }
-        }
-
-        public void Start(uint msec)
-        {
-            stop();         //stop prev timer
-
-            id = timeSetEvent(msec, 0, timerProc, UIntPtr.Zero, (uint)(TIME_CALLBACK_FUNCTION | TIME_PERIODIC));
-            if (id == 0)
-                throw new Exception("timeSetEvent error");
-            //Console.WriteLine("started timer " + id.ToString());
         }
 
 // timer event & callback func ------------------------------------------------

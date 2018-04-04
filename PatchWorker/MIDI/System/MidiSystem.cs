@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Transonic MIDI Library
-Copyright (C) 1995-2017  George E Greaney
+Copyright (C) 1995-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
-//using System.Windows.Forms;
 
 // p/invoke calls and structs used with WINMM.DLL library taken from http://www.pinvoke.net
 
@@ -48,8 +47,6 @@ namespace Transonic.MIDI.System
         public List<InputDevice> inputDevices;
         public List<OutputDevice> outputDevices;
 
-        //public Label midiTest;
-
         public MidiSystem()
         {
             //input devices
@@ -60,8 +57,13 @@ namespace Transonic.MIDI.System
             for (deviceID = 0; deviceID < incount; deviceID++)
             {
                 MMRESULT result = midiInGetDevCaps(deviceID, ref inCaps, Marshal.SizeOf(inCaps));
-                InputDevice indev = new InputDevice(deviceID, inCaps.szPname);
-                inputDevices.Add(indev);
+
+                //if we get an error, just skip the device
+                if (result == MMRESULT.MMSYSERR_NOERROR)
+                {
+                    InputDevice indev = new InputDevice(deviceID, inCaps.szPname);
+                    inputDevices.Add(indev);
+                }
             }
 
             //output devices
@@ -71,8 +73,13 @@ namespace Transonic.MIDI.System
             for (deviceID = 0; deviceID < outcount; deviceID++)
             {
                 MMRESULT result = midiOutGetDevCaps(deviceID, ref outCaps, Marshal.SizeOf(outCaps));                 
-                OutputDevice outdev = new OutputDevice(deviceID, outCaps.szPname);
-                outputDevices.Add(outdev);
+
+                //if we get an error, just skip the device
+                if (result == MMRESULT.MMSYSERR_NOERROR)
+                {
+                    OutputDevice outdev = new OutputDevice(deviceID, outCaps.szPname);
+                    outputDevices.Add(outdev);
+                }
             }
         }
 
@@ -138,6 +145,8 @@ namespace Transonic.MIDI.System
         }
 
 //- general midi --------------------------------------------------------------
+
+        //general MIDI list: https://en.wikipedia.org/wiki/General_MIDI
 
         public static List<String> GMNames = new List<String>(){
         
@@ -272,6 +281,16 @@ namespace Transonic.MIDI.System
         };
     }
 
+//- sys exception -------------------------------------------------------------
+
+    public class MidiSystemException : Exception
+    {
+        public MidiSystemException(String errorMsg)
+            : base(errorMsg)
+        {
+        }
+    }
+
 //-----------------------------------------------------------------------------
 
     //const vals from mmsystem.h
@@ -346,3 +365,5 @@ namespace Transonic.MIDI.System
     public IntPtr[] reservedArray;
     }
 }
+
+//  Console.WriteLine(" there's no sun in the shadow of the wizard");

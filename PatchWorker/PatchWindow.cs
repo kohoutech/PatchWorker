@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 1995-2017  George E Greaney
+Copyright (C) 1995-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -257,7 +257,7 @@ namespace PatchWorker
         private void helpAboutMenuItem_Click(object sender, EventArgs e)
         {
             String msg = "Patchworker\nversion 1.2.0\n" + 
-                "\xA9 Transonic Software 1997-2017\n" + 
+                "\xA9 Transonic Software 1997-2018\n" + 
                 "http://transonic.kohoutech.com";
             MessageBox.Show(msg, "About");
         }

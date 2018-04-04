@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 2005-2017  George E Greaney
+Copyright (C) 2005-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -51,9 +51,9 @@ namespace PatchWorker.UI
             inJack.Offset(xOfs, yOfs);
         }
 
-        public override Point getConnectionPoint()
+        public override Point ConnectionPoint
         {
-            return new Point(inJack.Left + inJack.Width / 2, inJack.Top + inJack.Height / 2);
+            get {return new Point(inJack.Left + inJack.Width / 2, inJack.Top + inJack.Height / 2);}
         }
 
         public override void paint(Graphics g)

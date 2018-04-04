@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
-Transonic MIDI Library
-Copyright (C) 1995-2017  George E Greaney
+Transonic Widget Library
+Copyright (C) 1996-2017  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,16 +21,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 
-//interface for midi engine to communicate back to user interface
-
-namespace Transonic.MIDI.System
+namespace Transonic.Widget
 {
-    public interface IMidiView
+    public class Knob : Control
     {
-        //public void sequenceBegin();
-        void handleMessage(int track, Transonic.MIDI.Message message);
-        void sequenceDone();
- 
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            Graphics g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            g.DrawEllipse(Pens.Blue, 0, 0, 30, 30);
+        }
     }
 }

@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Transonic MIDI Library
-Copyright (C) 1995-2017  George E Greaney
+Copyright (C) 1995-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -85,6 +85,10 @@ namespace Transonic.MIDI.System
             if (!opened)
             {
                 MMRESULT result = midiOutOpen(out devHandle, devID, IntPtr.Zero, IntPtr.Zero, CALLBACK_NULL);
+                if (result != MMRESULT.MMSYSERR_NOERROR)
+                {
+                    throw new MidiSystemException("couldn't open output device " + devName);
+                }
                 opened = true;
                 //Console.WriteLine("opened device " + devName + " result = " + result);
             }
@@ -95,6 +99,10 @@ namespace Transonic.MIDI.System
             if (opened)
             {
                 MMRESULT result = midiOutClose(devHandle);
+                if (result != MMRESULT.MMSYSERR_NOERROR)
+                {
+                    throw new MidiSystemException("couldn't close output device " + devName);
+                }
                 opened = false;
                 //Console.WriteLine("closed device " + devName + " result = " + result);
             }

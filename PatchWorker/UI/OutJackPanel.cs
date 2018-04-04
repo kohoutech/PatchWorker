@@ -55,9 +55,9 @@ namespace PatchWorker.UI
 
 //- connections ---------------------------------------------------------------
 
-        public override Point getConnectionPoint()
+        public override Point ConnectionPoint
         {
-            return new Point(outJack.Left + outJack.Width / 2, outJack.Top + outJack.Height / 2);
+            get { return new Point(outJack.Left + outJack.Width / 2, outJack.Top + outJack.Height / 2); }
         }
 
         public override iPatchConnector makeConnection(PatchPanel destPanel)

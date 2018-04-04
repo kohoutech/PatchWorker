@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 2005-2017  George E Greaney
+Copyright (C) 2005-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -96,7 +96,7 @@ namespace PatchWorker.Graph
         {
             if (outDev != null)
             {
-                if (msg.msgClass == Message.MESSAGECLASS.CHANNEL)       //if channel msg, route to output device
+                if (msg is ChannelMessage)       //if channel msg, route to output device
                 {
                     ((ChannelMessage)msg).channel = channelNum - 1;
                 }

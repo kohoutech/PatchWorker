@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
-Transonic Patch Library
-Copyright (C) 1995-2017  George E Greaney
+Transonic MIDI Library
+Copyright (C) 1995-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,9 +22,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Transonic.Patch
+namespace Transonic.MIDI
 {
-    public interface IPatchView
+    public class MarkerMap
+    {
+        public Sequence seq;
+        public List<Marker> markers;
+        public int count;
+
+        public MarkerMap(Sequence _seq)
+        {
+            seq = _seq;
+            markers = new List<Marker>();
+            count = 0;
+        }
+    }
+
+//-----------------------------------------------------------------------------
+
+    public class Marker
     {
     }
+
 }

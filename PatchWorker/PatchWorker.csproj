@@ -85,7 +85,8 @@
     <Compile Include="Graph\PatchCord.cs" />
     <Compile Include="Graph\PatchUnit.cs" />
     <Compile Include="Graph\Programmer.cs" />
-    <Compile Include="MIDI\Engine\IMidiView.cs" />
+    <Compile Include="MIDI\MarkerMap.cs" />
+    <Compile Include="MIDI\MeterMap.cs" />
     <Compile Include="MIDI\System\InputDevice.cs" />
     <Compile Include="MIDI\System\MidiSystem.cs" />
     <Compile Include="MIDI\Engine\MidiTimer.cs" />
@@ -95,6 +96,7 @@
     <Compile Include="MIDI\Message.cs" />
     <Compile Include="MIDI\MidiFile.cs" />
     <Compile Include="MIDI\Sequence.cs" />
+    <Compile Include="MIDI\TempoMap.cs" />
     <Compile Include="MIDI\Track.cs" />
     <Compile Include="PatchWindow.cs">
       <SubType>Form</SubType>
@@ -107,7 +109,7 @@
     <Compile Include="Patch\IPatchView.cs" />
     <Compile Include="Patch\PatchBox.cs" />
     <Compile Include="Patch\PatchCanvas.cs">
-      <SubType>UserControl</SubType>
+      <SubType>Component</SubType>
     </Compile>
     <Compile Include="Patch\PatchLine.cs" />
     <Compile Include="Patch\PatchPanel.cs" />

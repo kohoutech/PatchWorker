@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 2005-2017  George E Greaney
+Copyright (C) 2005-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -97,11 +97,11 @@ namespace PatchWorker.Graph
 
         public override void receiveMessage(byte[] data)
         {
-            Message msg = Message.getMessage(data, 0);                  //convert incoming bytes into midi message
+            Message msg = Message.getMessage(data);                  //convert incoming bytes into midi message
 
-            if ((msg.msgClass == Message.MESSAGECLASS.CHANNEL) &&       //filter channel msgs by channel num
+            if ((msg is ChannelMessage) &&                              //filter channel msgs by channel num
                 (((ChannelMessage)msg).channel == (channelNum - 1))  || 
-                (msg.msgClass == Message.MESSAGECLASS.SYSTEM))
+                (msg is SystemMessage))
             {
                 processMidiMsg(msg);                                    //and send it on its way
             }

@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Transonic MIDI Library
-Copyright (C) 1995-2017  George E Greaney
+Copyright (C) 1995-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -28,203 +28,91 @@ namespace Transonic.MIDI
 {
     public class Message
     {
-        public enum MESSAGECLASS { 
-            CHANNEL, 
-            SYSTEM, 
-            META 
-        }; 
-
-        public int status;
-        public MESSAGECLASS msgClass;
-        public int varLenCount;
 
 //- static methods ------------------------------------------------------------
 
-        public static Message getMessage(byte[] data, int ofs) 
+        public static Message getMessage(byte[] data)
         {
             Message msg = null;
-            int status = data[ofs];
-            if (status >= 0x80 && status < 0xf0)
-            {
-                msg = getChannelMessage(data, ofs);
-            }
-            else if (status >= 0xf0 && status < 0xff)
-            {
-                msg = getSystemMessage(data, ofs);
-            }
-            else if (status == 0xff)
-            {
-                msg = getMetaMessage(data, ofs);
-            }
 
+            int status = data[0];
+            if (status < 0xF0)          //midi channel message
+            {
+                int msgtype = status / 16;
+                int channel = status % 16;
+
+                int b1 = data[1];
+                int b2 = 0;
+                if ((msgtype != 0xC) && (msgtype != 0xD))
+                {
+                    b2 = data[2];
+                }
+
+                msg = Message.getChannelMessage(msgtype, channel, b1, b2);
+            }
             return msg;
         }
 
-        static Message getChannelMessage(byte[] data, int ofs)
+        public static Message getChannelMessage(int msgtype, int channel, int b1, int b2)
         {
-
             Message msg = null;
-            int status = data[ofs];
-            int msgtype = status / 16;
-            int channel = status % 16;
+
             switch (msgtype)
             {
-                case 0x8 :
-                    msg = new NoteOffMessage(data, ofs, channel);
+                case 0x8:
+                    msg = new NoteOffMessage(channel, b1, b2);
                     break;
                 case 0x9:
-                    msg = new NoteOnMessage(data, ofs, channel);
+                    msg = new NoteOnMessage(channel, b1, b2);
                     break;
                 case 0xa:
-                    msg = new AftertouchMessage(data, ofs, channel);
+                    msg = new AftertouchMessage(channel, b1, b2);
                     break;
                 case 0xb:
-                    msg = new ControllerMessage(data, ofs, channel);
+                    msg = new ControllerMessage(channel, b1, b2);
                     break;
                 case 0xc:
-                    msg = new PatchChangeMessage(data, ofs, channel);
+                    msg = new PatchChangeMessage(channel, b1);
                     break;
                 case 0xd:
-                    msg = new ChannelPressureMessage(data, ofs, channel);
+                    msg = new ChannelPressureMessage(channel, b1);
                     break;
                 case 0xe:
-                    msg = new PitchWheelMessage(data, ofs, channel);
-                    break;
-                default :
-                    break;
-            }
-            msg.msgClass = MESSAGECLASS.CHANNEL;
-            return msg;
-        }
-
-        static Message getSystemMessage(byte[] data, int ofs)
-        {
-            Message msg = null;
-            int status = data[ofs];
-            if (status == 0xF0)
-            {
-                msg = new SysExMessage(data, ofs); 
-            }
-            else
-            {
-                msg = new SystemMessage(data, ofs, status);
-            }
-            msg.msgClass = MESSAGECLASS.SYSTEM;
-            return msg;
-        }
-
-        static Message getMetaMessage(byte[] data, int ofs)
-        {
-            Message msg = null;
-            int msgtype = (int)data[ofs + 1];
-            switch (msgtype) 
-            {
-                case 0x00:
-                    msg = new SequenceNumberMessage(data, ofs);
-                    break;
-                case 0x01:
-                    msg = new TextMessage(data, ofs);
-                    break;
-                case 0x02:
-                    msg = new CopyrightMessage(data, ofs);
-                    break;
-                case 0x03:
-                    msg = new TrackNameMessage(data, ofs);
-                    break;
-                case 0x04:
-                    msg = new InstrumentMessage(data, ofs);
-                    break;
-                case 0x05:
-                    msg = new LyricMessage(data, ofs);
-                    break;
-                case 0x06:
-                    msg = new MarkerMessage(data, ofs);
-                    break;
-                case 0x07:
-                    msg = new CuePointMessage(data, ofs);
-                    break;
-                case 0x08:
-                    msg = new PatchNameMessage(data, ofs);
-                    break;
-                case 0x09:
-                    msg = new DeviceNameMessage(data, ofs);
-                    break;
-                case 0x20:
-                    msg = new MidiChannelMessage(data, ofs);
-                    break;
-                case 0x21:
-                    msg = new MidiPortMessage(data, ofs);
-                    break;
-                case 0x2f:
-                    msg = new EndofTrackMessage(data, ofs);
-                    break;
-                case 0x51:
-                    msg = new TempoMessage(data, ofs);
-                    break;
-                case 0x54:
-                    msg = new SMPTEOffsetMessage(data, ofs);
-                    break;
-                case 0x58:
-                    msg = new TimeSignatureMessage(data, ofs);
-                    break;
-                case 0x59:
-                    msg = new KeySignatureMessage(data, ofs);
+                    int wheelamt = ((b1 % 128) * 128) + (b2 % 128);
+                    msg = new PitchWheelMessage(channel, wheelamt);
                     break;
                 default:
-                    msg = new UnknownMetaMessage(data, ofs, msgtype);
                     break;
             }
-            msg.msgClass = MESSAGECLASS.META;
+            //convert noteon msg w/ vel = 0 to noteoff msg
+            if (msg is NoteOnMessage)
+            {
+                NoteOnMessage noteOn = (NoteOnMessage)msg;
+                if (noteOn.velocity == 0)
+                {
+                    NoteOffMessage noteOff = new NoteOffMessage(noteOn.channel, noteOn.noteNumber, 0);
+                    msg = noteOff;
+                }
+            }
             return msg;
         }
-
 
 //- base class ----------------------------------------------------------------
 
-        public Message(int _status)
+        public Message()
         {
-            status = _status;
-            varLenCount = 0;
         }
 
+        //for splitting a midi msg - handles subclass fields too
         public Message copy()
         {
             return (Message)this.MemberwiseClone();
         }
 
+        //for sending a msg to an output device
         virtual public byte[] getDataBytes() 
         {
             return null;
-        }
-
-        protected uint getVariableLengthVal(byte[] data, int ofs)
-        {
-            uint result = 0;         //largest var len quant allowed = 0xffffffff
-            int start = ofs;
-            uint b = data[ofs++];
-            while (b >= 0x80)
-            {
-                uint d = b % 128;
-                result *= 128;
-                result += d;
-                b = data[ofs++];
-            }
-            result *= 128;
-            result += b;
-            varLenCount = ofs - start;
-            return result;
-        }
-
-
-        protected String getMessageText(byte[] data, int ofs, uint len)
-        {
-            StringBuilder str = new StringBuilder((int)len);
-            for (int i = 0; i < len; i++)
-            {
-                byte ch = (byte)data[ofs++];
-                str.Append(Convert.ToChar(ch));
-            }
-            return str.ToString();
         }
     }
 
@@ -234,39 +122,14 @@ namespace Transonic.MIDI
 //  CHANNEL MESSAGES
 //-----------------------------------------------------------------------------
 
+    //channel message base class
     public class ChannelMessage : Message
     {
         public int channel;
 
-        public ChannelMessage(int status, int _channel) : base(status)
+        public ChannelMessage(int _channel) : base()
         {
             channel = _channel;
-        }
-    }
-
-    public class NoteOffMessage : ChannelMessage   //0x80
-    {
-        public int noteNumber;
-        public int velocity;
-
-        public NoteOffMessage(byte[] data, int ofs, int _channel) : base(0x80, _channel)
-        {
-            noteNumber = (int)data[ofs + 1];
-            velocity = (int)data[ofs + 2];
-        }
-
-        override public byte[] getDataBytes()
-        {
-            byte[] bytes = new byte[3];
-            bytes[0] = (byte)(0x80 + channel);
-            bytes[1] = (byte)noteNumber;
-            bytes[2] = (byte)velocity;
-            return bytes;
-        }
-
-        public override string ToString()
-        {
-            return "Note Off (" + channel + ") note = " + noteNumber;
         }
     }
 
@@ -275,10 +138,11 @@ namespace Transonic.MIDI
         public int noteNumber;
         public int velocity;
 
-        public NoteOnMessage(byte[] data, int ofs, int _channel) : base(0x90, _channel)
+        public NoteOnMessage(int channel, int note, int vel)
+            : base(channel)
         {
-            noteNumber = (int)data[ofs + 1];
-            velocity = (int)data[ofs + 2];
+            noteNumber = note;
+            velocity = vel;
         }
 
         override public byte[] getDataBytes()
@@ -296,16 +160,43 @@ namespace Transonic.MIDI
         }
     }
 
+    public class NoteOffMessage : ChannelMessage   //0x80
+    {
+        public int noteNumber;
+        public int velocity;
+
+        public NoteOffMessage(int channel, int note, int vel)
+            : base(channel)
+        {
+            noteNumber = note;
+            velocity = vel;
+        }
+
+        override public byte[] getDataBytes()
+        {
+            byte[] bytes = new byte[3];
+            bytes[0] = (byte)(0x80 + channel);
+            bytes[1] = (byte)noteNumber;
+            bytes[2] = (byte)velocity;
+            return bytes;
+        }
+
+        public override string ToString()
+        {
+            return "Note Off (" + channel + ") note = " + noteNumber;
+        }
+    }
+
     public class AftertouchMessage : ChannelMessage     //0xA0
     {
         public int noteNumber;
         public int pressure;
 
-        public AftertouchMessage(byte[] data, int ofs, int _channel)
-            : base(0xa0, _channel)
+        public AftertouchMessage(int channel, int note, int press)
+            : base(channel)
         {
-            noteNumber = (int)data[ofs + 1];
-            pressure = (int)data[ofs + 2];
+            noteNumber = note;
+            pressure = press;
         }
 
         override public byte[] getDataBytes()
@@ -320,28 +211,28 @@ namespace Transonic.MIDI
 
     public class ControllerMessage : ChannelMessage     //0xB0
     {
-        public int controllerNumber;
-        public int controllerValue;
+        public int ctrlNumber;
+        public int ctrlValue;
 
-        public ControllerMessage(byte[] data, int ofs, int _channel)
-            : base(0xb0, _channel)
+        public ControllerMessage(int channel, int num, int val)
+            : base(channel)
         {
-            controllerNumber = (int)data[ofs + 1];
-            controllerValue = (int)data[ofs + 2];
+            ctrlNumber = num;
+            ctrlValue = val;
         }
 
         override public byte[] getDataBytes()
         {
             byte[] bytes = new byte[3];
             bytes[0] = (byte)(0xb0 + channel);
-            bytes[1] = (byte)controllerNumber;
-            bytes[2] = (byte)controllerValue;
+            bytes[1] = (byte)ctrlNumber;
+            bytes[2] = (byte)ctrlValue;
             return bytes;
         }
 
         public override string ToString()
         {
-            return "Controller (" + channel + ") number = " + controllerNumber + ", value = " + controllerValue;
+            return "Controller (" + channel + ") number = " + ctrlNumber + ", value = " + ctrlValue;
         }
     }
 
@@ -349,16 +240,10 @@ namespace Transonic.MIDI
     {
         public int patchNumber;
 
-        public PatchChangeMessage(int _channel, byte b1)
-            : base(0xc0, _channel)
+        public PatchChangeMessage(int channel, int num)
+            : base(channel)
         {
-            patchNumber = (int)b1;
-        }
-
-        public PatchChangeMessage(byte[] data, int ofs, int _channel)
-            : base(0xc0, _channel)
-        {
-            patchNumber = (int)data[ofs + 1];
+            patchNumber = num;
         }
 
         override public byte[] getDataBytes()
@@ -379,10 +264,10 @@ namespace Transonic.MIDI
     {
         public int pressure;
 
-        public ChannelPressureMessage(byte[] data, int ofs, int _channel)
-            : base(0xd0, _channel)
+        public ChannelPressureMessage(int channel, int press)
+            : base(channel)
         {
-            pressure = (int)data[ofs + 1];
+            pressure = press;
         }
 
         override public byte[] getDataBytes()
@@ -398,12 +283,10 @@ namespace Transonic.MIDI
     {
         public int wheel;
 
-        public PitchWheelMessage(byte[] data, int ofs, int _channel)
-            : base(0xe0, _channel)
+        public PitchWheelMessage(int channel, int _wheel)
+            : base(channel)
         {
-            int b1 = (int)data[ofs + 1];
-            int b2 = (int)data[ofs + 2];
-            wheel = b1 * 128 + b2;
+            wheel = _wheel;
         }
 
         override public byte[] getDataBytes()
@@ -422,46 +305,47 @@ namespace Transonic.MIDI
 
     public class SysExMessage : Message
     {
-        List<int> sysExData;
+        public List<byte> sysExData;
 
-        public SysExMessage(byte[] data, int ofs)
-            : base(0xF0)
+        public SysExMessage(List<byte> _data)
+            : base()
         {
-            sysExData = new List<int>();
-            ofs++;
-            int b1 = (int)data[ofs++];
-            while (b1 != 0xf7)
-            {
-                sysExData.Add(b1);
-                b1 = (int)data[ofs++];
-            }            
+            sysExData = _data;
+        }
+
+        override public byte[] getDataBytes()
+        {
+            byte[] bytes = sysExData.ToArray();
+            return bytes;
         }
     }
 
     public enum SYSTEMMESSAGE { 
-        QUARTERFRAME = 0Xf1, 
-        SONGPOSITION, 
-        SONGSELECT, 
-        UNKNOWN1,
-        UNKNOWN2,
-        TUNEREQUEST,
-        SYSEXEND,
-        MIDICLOCK,
-        MIDITICK, 
-        MIDISTART, 
-        MIDICONTINUE, 
-        MIDISTOP,
-        UNKNOWN3,
-        ACTIVESENSE = 0xfe
+        QUARTERFRAME = 0Xf1,        //f1
+        SONGPOSITION,               //f2
+        SONGSELECT,                 //f3
+        UNDEFINED1,                 //f4
+        UNDEFINED2,                 //f5
+        TUNEREQUEST,                //f6
+        SYSEXEND,                   //f7
+        MIDICLOCK,                  //f8
+        MIDITICK,                   //f9
+        MIDISTART,                  //fa
+        MIDICONTINUE,               //fb
+        MIDISTOP,                   //fc
+        UNDEFINED3,                 //fd
+        ACTIVESENSE = 0xfe          //fe
     }; 
 
     public class SystemMessage : Message
     {
+        public static int[] SysMsgLen = {1, 2, 3, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1};      //f4, f5, fd are undefined
+
         SYSTEMMESSAGE msgtype;
         int value;
 
-        public SystemMessage(byte[] data, int ofs, int status)
-            : base(status)
+        public SystemMessage(int status, int val)
+            : base()
         {
             msgtype = (SYSTEMMESSAGE)status;
             value = 0;
@@ -469,322 +353,52 @@ namespace Transonic.MIDI
             {
                 case SYSTEMMESSAGE.QUARTERFRAME :
                 case SYSTEMMESSAGE.SONGSELECT :
-                    value = (int)data[ofs + 1];
-                    break;
                 case SYSTEMMESSAGE.SONGPOSITION:
-                    int b1 = (int)data[ofs + 1];
-                    int b2 = (int)data[ofs + 2];
-                    value = b1 * 128 + b2;
+                    value = val;
                     break;
                 default :
                     break;
             }        
         }
-    }
 
-//-----------------------------------------------------------------------------
-//  META MESSAGES
-//-----------------------------------------------------------------------------
-
-    public class SequenceNumberMessage : Message    //0xff 0x00
-    {
-        int b1, b2;
-
-        public SequenceNumberMessage(byte[] data, int ofs)
-            : base(0xFF)
+        override public byte[] getDataBytes()
         {
-            uint length = getVariableLengthVal(data, ofs);
-            ofs += varLenCount;
-            b1 = 0;
-            b2 = 0;
-            if (length > 0)
+            byte[] bytes = new byte[SysMsgLen[(byte)msgtype - 0xF0]];
+            bytes[0] = (byte)msgtype;
+            switch (msgtype)
             {
-                b1 = (int)data[ofs++];
-                b2 = (int)data[ofs++];
+                case SYSTEMMESSAGE.QUARTERFRAME:
+                case SYSTEMMESSAGE.SONGSELECT:
+                    bytes[1] = (byte)value;
+                    break;
+                case SYSTEMMESSAGE.SONGPOSITION:
+                    bytes[1] = (byte)(value / 128);
+                    bytes[2] = (byte)(value % 128);
+                    break;
+                default:
+                    break;
             }
+            return bytes;
         }
     }
 
-    public class TextMessage : Message      //0xff 0x01
+    //to preserve any escape data in a midi file
+    public class EscapeMessage : Message
     {
-        String text;
+        List<byte> escData;
 
-        public TextMessage(byte[] data, int ofs)
-            : base(0xFF)
+        public EscapeMessage(List<byte> _data)
+            : base()
         {
-            uint length = getVariableLengthVal(data, ofs);
-            ofs += varLenCount;
-            text = getMessageText(data, ofs, length);
-        }
-    }
-
-    public class CopyrightMessage : Message     //0xff 0x02
-    {
-        String copyright;
-
-        public CopyrightMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            uint length = getVariableLengthVal(data, ofs);
-            ofs += varLenCount;
-            copyright = getMessageText(data, ofs, length);
-        }
-    }
-
-    public class TrackNameMessage : Message     //0xff 0x03
-    {
-        public String trackName;
-
-        public TrackNameMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            uint length = getVariableLengthVal(data, ofs);
-            ofs += varLenCount;
-            trackName = getMessageText(data, ofs, length);
-        }
-    }
-
-    public class InstrumentMessage : Message    //0xff 0x04
-    {
-        public String instrumentName;
-
-        public InstrumentMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            uint length = getVariableLengthVal(data, ofs);
-            ofs += varLenCount;
-            instrumentName = getMessageText(data, ofs, length);
-        }
-    }
-
-    public class LyricMessage : Message     //0xff 0x05
-    {
-        public String lyric;
-
-        public LyricMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            uint length = getVariableLengthVal(data, ofs);
-            ofs += varLenCount;
-            lyric = getMessageText(data, ofs, length);
-        }
-    }
-
-    public class MarkerMessage : Message        //0xff 0x06
-    {
-        public String marker;
-
-        public MarkerMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            uint length = getVariableLengthVal(data, ofs);
-            ofs += varLenCount;
-            marker = getMessageText(data, ofs, length);
-        }
-    }
-
-    public class CuePointMessage : Message      //0xff 0x07
-    {
-        public String cuePoint;
-
-        public CuePointMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            uint length = getVariableLengthVal(data, ofs);
-            ofs += varLenCount;
-            cuePoint = getMessageText(data, ofs, length);
-        }
-    }
-
-    public class PatchNameMessage : Message        //0xff 0x08
-    {
-        public String patchName;
-
-        public PatchNameMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            uint length = getVariableLengthVal(data, ofs);
-            ofs += varLenCount;
-            patchName = getMessageText(data, ofs, length);
-        }
-    }
-
-    public class DeviceNameMessage : Message        //0xff 0x09
-    {
-        public String deviceName;
-
-        public DeviceNameMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            uint length = getVariableLengthVal(data, ofs);
-            ofs += varLenCount;
-            deviceName = getMessageText(data, ofs, length);
-        }
-    }
-
-    //obsolete
-    public class MidiChannelMessage : Message       //0xff 0x20
-    {
-        int cc;
-
-        public MidiChannelMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            cc = (int)data[ofs++];
-        }
-    }
-
-    //obsolete
-    public class MidiPortMessage : Message          //0xff 0x21
-    {
-        int pp;
-
-        public MidiPortMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            pp = (int)data[ofs++];
-        }
-    }
-
-    public class EndofTrackMessage : Message        //0xff 0x2f
-    {
-
-        public EndofTrackMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            //length should be 0
+            escData = _data;
         }
 
         override public byte[] getDataBytes()
         {
-            byte[] bytes = new byte[3];
-            bytes[0] = 0xff;
-            bytes[1] = 0x2f;
-            bytes[2] = 0x00;
+            byte[] bytes = escData.ToArray();
             return bytes;
         }
-
-        public override string ToString()
-        {
-            return "End of Track";
-        }
     }
-
-    public class TempoMessage : Message             //0xff 0x51
-    {
-        public int tempo;
-        public Timing timing;
-
-        public TempoMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            int b1 = (int)data[ofs++];
-            int b2 = (int)data[ofs++];
-            int b3 = (int)data[ofs++];
-            tempo = ((b1 * 16 + b2) * 256) + b3;
-            timing = null;
-        }
-
-        override public byte[] getDataBytes()
-        {
-            byte[] bytes = new byte[6];
-            bytes[0] = 0xff;
-            bytes[1] = 0x51;
-            bytes[2] = 0x03;
-            int _tempo = tempo;
-            bytes[5] = (byte)(_tempo % 0x100);
-            _tempo = _tempo / 0x100;
-            bytes[4] = (byte)(_tempo % 0x100);
-            _tempo = _tempo / 0x100;
-            bytes[3] = (byte)(_tempo % 0x100);
-            return bytes;
-        }
-
-        public override string ToString()
-        {
-            return "Tempo = " + tempo + " at time = " + timing.microsec;
-        }
-    }
-
-    public class SMPTEOffsetMessage : Message       //0xff 0x54
-    {
-        int hour, min, sec, frame, frame100;
-
-        public SMPTEOffsetMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            hour = (int)data[ofs++];
-            min = (int)data[ofs++];
-            sec = (int)data[ofs++];
-            frame = (int)data[ofs++];
-            frame100 = (int)data[ofs++];
-        }
-    }
-
-    public class TimeSignatureMessage : Message         //0xff 0x58
-    {
-        int numerator;
-        int denominator;
-        int clicks;
-        int clocksPerQuarter;
-
-        public TimeSignatureMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            numerator = (int)data[ofs++];
-            int b1 = (int)data[ofs++];
-            denominator = (int)Math.Pow(2.0, b1);
-            clicks = (int)data[ofs++];
-            clocksPerQuarter = (int)data[ofs++];
-        }
-
-        override public byte[] getDataBytes()
-        {
-            byte[] bytes = new byte[7];
-            bytes[0] = 0xff;
-            bytes[1] = 0x58;
-            bytes[2] = 0x04;
-            bytes[3] = (byte)numerator;
-            bytes[4] = (byte)(Math.Log(denominator, 2.0));
-            bytes[5] = (byte)clicks;
-            bytes[6] = (byte)clocksPerQuarter;
-            return bytes;
-        }
-
-        public override string ToString()
-        {
-            return "Time Signature = " + numerator + "/" + denominator + " clicks = " + clicks + " clocks/quarter = " + clocksPerQuarter;
-        }
-
-    }
-
-    public class KeySignatureMessage : Message          //0xff 0x59
-    {
-        int sf;
-        int mi;
-
-        public KeySignatureMessage(byte[] data, int ofs)
-            : base(0xFF)
-        {
-            sf = (int)data[ofs++];
-            mi = (int)data[ofs++];
-        }
-    }
-
-    public class UnknownMetaMessage : Message
-    {
-        int msgtype;
-
-        public UnknownMetaMessage(byte[] data, int ofs, int _msgtype)
-            : base(0xFF)
-        {
-            msgtype = _msgtype;
-            uint length = getVariableLengthVal(data, ofs);
-            ofs += varLenCount;
-            Console.WriteLine("got unknown meta message type = {0}", msgtype.ToString("X2"));            
-        }
-    }
-
 }
 
 //Console.WriteLine("there's no sun in the shadow of the wizard");

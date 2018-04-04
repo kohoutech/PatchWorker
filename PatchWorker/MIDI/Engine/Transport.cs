@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Transonic MIDI Library
-Copyright (C) 1995-2017  George E Greaney
+Copyright (C) 1995-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -23,66 +23,73 @@ using System.Linq;
 using System.Text;
 
 using Transonic.MIDI;
+using Transonic.MIDI.System;
 
-namespace Transonic.MIDI.System
+namespace Transonic.MIDI.Engine
 {
     public class Transport
     {
-        IMidiView window;           //for updating the UI
+        IMidiView window;           //for updating the UI        
 
         Sequence seq;
-        Track tempoMap;
-        int tempo;
-        float playbackSpeed;
+        TempoMap tempoMap;
+        MeterMap meterMap;
         int division;
         int trackCount;
 
         MidiTimer timer;
-        long startTime;
+        long startTime;         //time we started playing to calc num of ticks that have elasped since then (in 0.1 microsecs)
         long startOffset;
-        long tick;          //number of 0.1 microsecs per tick
-        long tickTime;      //cumulative tick time
-        int tempoPos;
-        int[] trackPos;     //pos of the next event in each track
+        long tickLen;          //length of one tick in fractions of 0.1 microsec (100 nanosec)
+        long tickTime;         //cumulative tick time
+        public int tickNum;    //cur tick number
 
-        public int tickCount;      //cur tick number
-        public TempoMessage curTempo;
+        int[] trackPos;        //pos of the next event in each track
+        int tempoPos;          //pos of next tempo event
+        Tempo curTempo;
+        int meterPos;
+        Meter curMeter;
+
+        bool isPlaying;
+        float playbackSpeed;
 
         public Transport(IMidiView _window)
         {
-            window = _window;
+            window = _window;            
+            seq = null;
 
             timer = new MidiTimer();
             timer.Timer += new EventHandler(OnPulse);
-
-            division = 120;
-            playbackSpeed = 1.0f;
-            setTempo(120);      //default tempo & division
+            isPlaying = false;
+            playbackSpeed = 1.0f;            
         }
 
         public void setSequence(Sequence _seq)
         {
             seq = _seq;
-            division = seq.division;                                    //ticks / quarter note
-            tempoMap = seq.tracks[0];
-            int i = 0;
-            while (i < tempoMap.events.Count && !(tempoMap.events[i].msg is TempoMessage)) i++;
-            if (i < tempoMap.events.Count)
-            {
-                setTempo(((TempoMessage)tempoMap.events[i].msg).tempo);
-            }
-
-            trackCount = seq.lastTrack;
+            tempoMap = seq.tempoMap;
+            meterMap = seq.meterMap;
+            division = seq.division;
+            trackCount = seq.tracks.Count;
             trackPos = new int[trackCount];
-
-            rewindSequence();
+            rewind();
         }
 
-        public void setTempo(int _tempo)
+        //tempo is len of quarter note in microsecs, division is number of ticks / quarter note
+        public void setTempo(Tempo tempo)
         {
-            tempo = _tempo;                                                 //microsec / quarter note
-            tick = (long)((tempo / (division * playbackSpeed)) * 10.0f);    //len of each tick in 0.1 microsecs (or 100 nanosecs)
+            curTempo = tempo;
+            tickLen = (long)((curTempo.rate / (division * playbackSpeed)) * 10.0f);     //len of each tick in 0.1 usecs (or 100 nanosecs)
+            window.tempoChange(curTempo.rate);
         }
+
+        //tempo is len of quarter note in microsecs, division is number of ticks / quarter note
+        public void setMeter(Meter meter)
+        {
+            curMeter = meter;
+            window.meterChange(curMeter.numer, curMeter.denom, curMeter.keysig);
+        }
+
 
 //- operation methods ---------------------------------------------------------
 
@@ -92,161 +99,225 @@ namespace Transonic.MIDI.System
 
         public void shutdown()
         {
-            stopSequence();            
+            if (isPlaying)
+            {
+                stop();
+            }
         }
 
-        public void rewindSequence()
+        public void play()
         {
-            tickCount = 0;
-            tickTime = tick;                    //time of first tick (not 0 - that would be no ticks)
+            if (!isPlaying)
+            {
+                //set start time so elasped time is the same as when we stopped playing, if first time, ofs = 0
+                startTime = DateTime.Now.Ticks - startOffset;       
 
-            tempoPos = 0;
-            curTempo = null;
-            for (int i = 0; i < trackPos.Length; i++)
-                trackPos[i] = 0;
-            startOffset = 0;
+                timer.start(1);               //timer interval = 1 msec
+                isPlaying = true;
+            }
         }
 
-        public void playSequence()
+        public void record()
         {
-            startTime = DateTime.Now.Ticks - startOffset;
-
-            timer.Start(1);               //timer interval = 1 msec
         }
 
-        public void stopSequence()
+        public void stop()
         {
-            long now = DateTime.Now.Ticks;
-            startOffset = (now - startTime);
-            timer.stop();
-            seq.allNotesOff();
+            if (isPlaying)
+            {
+                long now = DateTime.Now.Ticks;          //start offset is the elapsed time from start to stopping
+                startOffset = (now - startTime);        //so timer will be correct when we restart this up again
+                timer.stop();
+                seq.allNotesOff();
+                isPlaying = false;
+            }
+        }
+
+        public void rewind()
+        {
+            if (!isPlaying)
+            {
+                //set initial tempo
+                tempoPos = 0;
+                setTempo(tempoMap.tempos[tempoPos++]);
+
+                meterPos = 0;
+                setMeter(meterMap.meters[meterPos++]);
+
+                tickNum = 0;
+                tickTime = tickLen;                    //time of first tick (not 0 - that would be no ticks)
+
+                for (int i = 1; i < trackPos.Length; i++)
+                {
+                    trackPos[i] = 0;
+                }
+                startOffset = 0;                        //at the beginning of seq
+            }
         }
 
         public void sequenceDone()
         {
             timer.stop();
             seq.allNotesOff();
+            isPlaying = false;
             window.sequenceDone();
         }
 
-        public void halfSpeedSequence(bool on)
+        public void setPlaybackSpeed(bool on)
         {
             playbackSpeed = on ? 0.5f : 1.0f;
-            setTempo(curTempo != null ? curTempo.tempo : 120);
+            setTempo(curTempo);
         }
 
-        public void setSequencePos(int ticknum)
+        public int getCurrentPos()
         {
-            tickCount = ticknum;
-            setTempo(120);                          //default tempo & division
-            tempoPos = 0;
-            curTempo = null;
+            return tickNum;
+        }
 
-            //find the most recent tempo event - if no tempo events, go with the default
-            List<Event> events = tempoMap.events;
-            if (events.Count != 0)
+        //set cur pos in sequence to a specific tick, only if stoppped
+        public void setCurrentPos(int _ticknum)
+        {
+            if (!isPlaying)
             {
-                while ((tempoPos < events.Count) && (tickCount > events[tempoPos].time))
-                {
-                    tempoPos++;
-                }
-                while ((tempoPos >= 0) && !(events[tempoPos].msg is TempoMessage))      //we've passed it, backup to prev tempo event
-                {
-                    tempoPos--;
-                }
-                if (tempoPos < events.Count)
-                {
-                    curTempo = (TempoMessage)events[tempoPos].msg;
-                    setTempo(curTempo.tempo);
-                    int tickOfs = ticknum - curTempo.timing.tick;                          //num of ticks from prev tempo msg to now
-                    tickTime = (curTempo.timing.microsec * 10L) + (tickOfs * tick);       //prev tempo's time (in usec) + time of ticks to now
-                    //tickTime = tickCount * tick;            
-                }
-            }
-            else
-            {
-                tickTime = tickCount * tick;
-            }
+                tickNum = _ticknum;
+                Tempo tempo = tempoMap.findTempo(tickNum, out tempoPos);
+                setTempo(tempo);
 
-            startOffset = tickTime;
-            startTime = DateTime.Now.Ticks - startOffset;
+                int tickOfs = _ticknum - curTempo.tick;                //num of ticks from prev tempo msg to now
+                tickTime = (curTempo.time * 10L) + (tickOfs * tickLen);      //prev tempo's time (in usec/10) + time of ticks to now
 
-            //set cur pos in each track
-            for (int trackNum = 1; trackNum < trackCount; trackNum++)
-            {
-                Track track = seq.tracks[trackNum];
-                events = seq.tracks[trackNum].events;
-                trackPos[trackNum] = 0;
-                PatchChangeMessage patchmsg = null;
-                for (int i = 0; i < events.Count; i++)
+                startOffset = tickTime;                             //the elapsed time since seq start
+                startTime = DateTime.Now.Ticks - startOffset;       //start time is when we would have started playing up to now
+
+                Meter meter = meterMap.findMeter(tickNum, out meterPos);
+                setMeter(meter);
+
+                //set cur pos in each track
+                //find and send most recent patch change message for each track
+                for (int trackNum = 0; trackNum < trackCount; trackNum++)
                 {
-                    if (events[i].msg is PatchChangeMessage)
-                        patchmsg = (PatchChangeMessage)events[i].msg;
-                    if (events[i].time > ticknum)
-                        break;
-                    trackPos[trackNum]++;
-                }
-                if (patchmsg != null)
-                {                    
-                    track.sendMessage(patchmsg);
+                    Track track = seq.tracks[trackNum];
+                    List<Event> events = seq.tracks[trackNum].events;
+                    trackPos[trackNum] = 0;
+                    PatchChangeMessage patchmsg = null;
+                    for (int i = 0; i < events.Count; i++)
+                    {
+                        Event evt = events[i];
+                        if (evt is MessageEvent && (((MessageEvent)evt).msg is PatchChangeMessage))
+                        {
+                            patchmsg = (PatchChangeMessage)((MessageEvent)evt).msg;
+                        }
+                        if (events[i].tick >= _ticknum)
+                            break;
+                        trackPos[trackNum]++;
+                    }
+                    if (patchmsg != null)
+                    {
+                        track.sendMessage(patchmsg);
+                    }
                 }
             }
         }
 
-        public int getMilliSecTime()
+        public int getCurrentTime()
         {
             return (int)(tickTime / 10000L);            //ret tick time in msec
         }
 
+        public void getCurrentBeat(out int measure, out int beat, out int ticks)
+        {
+            int beatticks = (division * 4) / curMeter.denom;
+            int measureticks = (beatticks * curMeter.numer);
+
+            ticks = tickNum - curMeter.tick;
+            measure = curMeter.measure + (ticks / measureticks);
+            ticks = ticks % measureticks;
+            beat = (ticks / beatticks) + 1;
+            ticks = ticks % beatticks;
+        }
+
 //- timer method --------------------------------------------------------------
 
-        public void OnPulse(object sender, EventArgs e)
+        //when transport is playing, this will be called approx every millisec
+        //one or more ticks may have happened during this time, so we get the current time in 0.1 MICROSECs
+        //and calc the running time since start up & compare with the time of the next tick
+        //if we've passed it, then inc tick number and calc time of the following tick
+        //and then handle all the messages on every track for the tick that we just passed
+        //keep doing this until we're caught up to the current tick number (ie its ahead of where we are now)
+        //since 1 ms < threshold of simultaneity (~2 - 5 ms), all events should sound like there are happening at the same time
+        private void OnPulse(object sender, EventArgs e)
         {
-            long now = DateTime.Now.Ticks;          //one tick = 0.1 microsec
+            long now = DateTime.Now.Ticks;          //one system's clock tick = 0.1 microsec
             long runningTime = (now - startTime);
 
             while (runningTime > tickTime)          //we've passed one or more ticks
             {
-                tickCount++;                        //update tick number
-                tickTime = tickTime + tick;         //and get time of next tick
-
                 //handle tempo msgs
-                List<Event> events = tempoMap.events;
-                while ((tempoPos < events.Count) && (tickCount >= events[tempoPos].time))
+                if ((tempoPos < tempoMap.count) && (tickNum >= tempoMap.tempos[tempoPos].tick))
                 {
-                    Message msg = events[tempoPos].msg;
-                    if (msg is TempoMessage)
-                    {
-                        curTempo = (TempoMessage)msg;
-                        setTempo(curTempo.tempo);
-                    }
-                    tempoPos++;                    
+                    Tempo tempo = tempoMap.tempos[tempoPos];
+                    setTempo(tempo);
+                    tempoPos++;           
                 }
 
-                bool alldone = true;
-                for (int trackNum = 1; trackNum < trackCount; trackNum++)
+                //handle meter msgs
+                if ((meterPos < meterMap.count) && (tickNum >= meterMap.meters[meterPos].tick))
+                {
+                    Meter meter = meterMap.meters[meterPos];
+                    setMeter(meter);
+                    meterPos++;
+                }
+
+                //handle track events for each track
+                //alldone will be true when we've reached the end of every track
+                for (int trackNum = 0; trackNum < trackCount; trackNum++)
                 {
                     Track track = seq.tracks[trackNum];
-                    events = track.events;
-
-                    bool done = (trackPos[trackNum] >= events.Count);
-                    while (!done && tickCount >= events[trackPos[trackNum]].time)
+                    if (track.outDev != null && !track.muted)       //check if track is outputting
                     {
-                        Message msg = events[trackPos[trackNum]].msg;
-                        track.sendMessage(msg);
-                        window.handleMessage(trackNum, msg);
-                        trackPos[trackNum]++;
-                        done = (trackPos[trackNum] >= events.Count);
-                    }
+                        List<Event> events = track.events;
+                        bool done = (trackPos[trackNum] >= events.Count);
 
-                    alldone = alldone && done;
+                        while (!done && (tickNum >= events[trackPos[trackNum]].tick))
+                        {
+                            Event evt = events[trackPos[trackNum]];             //get next event for this track
+
+                            if (!(evt is MetaEvent))
+                            {
+                                Message msg = ((MessageEvent)evt).msg;      //get event's midi message
+                                track.sendMessage(msg);                     //send it out                            
+                                window.handleMessage(trackNum, msg);        //and update the UI 
+                            }
+
+                            trackPos[trackNum]++;
+                            done = (trackPos[trackNum] >= events.Count);
+                        }                                                
+                    }
                 }
-                if (alldone)
+
+                tickNum++;                          //update tick number
+                tickTime = tickTime + tickLen;      //and get time of next tick
+
+                if (tickNum > seq.length)
                 {
                     sequenceDone();
                 }
             }
         }
+    }
+
+//- UI interface --------------------------------------------------------------
+
+    //for communication with the UI
+    public interface IMidiView
+    {
+        //for passing note on & off msgs to the keyboard bar
+        void handleMessage(int track, Transonic.MIDI.Message message);
+
+        void sequenceDone();
+
+        void tempoChange(int rate);
+        void meterChange(int numer, int denom, int key);
     }
 }
 
