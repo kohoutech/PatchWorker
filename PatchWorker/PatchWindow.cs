@@ -63,6 +63,7 @@ namespace PatchWorker
             this.Text = "PatchWorker [new patch]";
         }
 
+        //reset prev window size and pos
         public void loadSettings(XmlNode windowNode)
         {
             int posX = Convert.ToInt32(windowNode.Attributes["posX"].Value);
@@ -168,7 +169,9 @@ namespace PatchWorker
             ToolStripItem inputItem = new ToolStripMenuItem(unit.name);
             inputItem.Click += new EventHandler(unitSelectMenuItem_Click);
             inputItem.Tag = unit;
+            inputItem.Enabled = unit.enabled;
             unit.setMenuItem(inputItem);
+
             if (inputUnitMenuItems == 0)
             {
                 unitMenuItem.DropDownItems.Add(new ToolStripSeparator());
@@ -184,16 +187,18 @@ namespace PatchWorker
 
         public void addOutputUnitToMenu(PatchUnit unit)
         {
-            ToolStripItem inputItem = new ToolStripMenuItem(unit.name);
-            inputItem.Click += new EventHandler(unitSelectMenuItem_Click);
-            inputItem.Tag = unit;
-            unit.setMenuItem(inputItem);
+            ToolStripItem outputItem = new ToolStripMenuItem(unit.name);
+            outputItem.Click += new EventHandler(unitSelectMenuItem_Click);
+            outputItem.Tag = unit;
+            outputItem.Enabled = unit.enabled;
+            unit.setMenuItem(outputItem);
+
             if (outputUnitMenuItems == 0)
             {
                 unitMenuItem.DropDownItems.Add(new ToolStripSeparator());
                 outputUnitMenuItems++;
             }
-            unitMenuItem.DropDownItems.Insert((3 + inputUnitMenuItems + outputUnitMenuItems), inputItem);
+            unitMenuItem.DropDownItems.Insert((3 + inputUnitMenuItems + outputUnitMenuItems), outputItem);
             outputUnitMenuItems++;
         }
 
@@ -205,7 +210,7 @@ namespace PatchWorker
                 unitdlg.ShowDialog();
                 if (unitdlg.DialogResult == DialogResult.OK)
                 {
-                    InputUnit inUnit = new InputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum);
+                    InputUnit inUnit = new InputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum, true);
                     patchworker.addInputUnit(inUnit);
                 }
             }
@@ -230,7 +235,7 @@ namespace PatchWorker
                 unitdlg.ShowDialog();
                 if (unitdlg.DialogResult == DialogResult.OK)
                 {
-                    OutputUnit outUnit = new OutputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum, unitdlg.progNum);
+                    OutputUnit outUnit = new OutputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum, unitdlg.progNum, true);
                     patchworker.addOutputUnit(outUnit);
                 }
             }
@@ -256,7 +261,7 @@ namespace PatchWorker
 
         private void helpAboutMenuItem_Click(object sender, EventArgs e)
         {
-            String msg = "Patchworker\nversion 1.2.0\n" + 
+            String msg = "Patchworker\nversion 1.2.1\n" + 
                 "\xA9 Transonic Software 1997-2018\n" + 
                 "http://transonic.kohoutech.com";
             MessageBox.Show(msg, "About");

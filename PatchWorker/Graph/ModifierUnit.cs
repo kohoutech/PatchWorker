@@ -33,8 +33,8 @@ namespace PatchWorker.Graph
     public class ModifierUnit : PatchUnit
     {
         //no special cons here
-        public ModifierUnit(PatchWorker _patchworker, String name)
-            : base(_patchworker, name)
+        public ModifierUnit(PatchWorker _patchworker, String name, bool enabled)
+            : base(_patchworker, name, enabled)
         {            
         }
 

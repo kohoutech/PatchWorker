@@ -39,8 +39,8 @@ namespace PatchWorker.Graph
         bool started;
 
         //user cons
-        public OutputUnit(PatchWorker _patchworker, String name, String _outDevName, int _channel, int _progCount)
-            : base(_patchworker, name)
+        public OutputUnit(PatchWorker _patchworker, String name, String _outDevName, int _channel, int _progCount, bool enabled)
+            : base(_patchworker, name, enabled)
         {
             outDevName = _outDevName;
             channelNum = _channel;
@@ -122,17 +122,11 @@ namespace PatchWorker.Graph
             int progcount = Convert.ToInt32(unitNode.Attributes["progcount"].Value);
 
             OutputDevice outDev = patchworker.midiSystem.findOutputDevice(devicename);
-            if (outDev != null)
-            {
-                result = new OutputUnit(patchworker, name, devicename, channel, progcount);
-            }
-            else
-            {
-                throw new PatchUnitLoadException(name, "no output device " + devicename + " found");
-            }
+            bool enabled = (outDev != null);
+            result = new OutputUnit(patchworker, name, devicename, channel, progcount, enabled);
 
             //load programmer for unit
-            if (result != null)
+            if (enabled)
             {
                 foreach (XmlNode node in unitNode.ChildNodes)
                 {

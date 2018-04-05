@@ -35,14 +35,16 @@ namespace PatchWorker.Graph
         public System.Windows.Forms.ToolStripItem menuItem;
         public Programmer programmer;
         public int progCount;
+        public bool enabled;
 
-        public PatchUnit(PatchWorker _patchworker, String name) :  base(name)
+        public PatchUnit(PatchWorker _patchworker, String name, bool _enabled) :  base(name)
         {
             patchworker = _patchworker;
             destList = new List<PatchCord>();
             menuItem = null;
             programmer = null;
             progCount = 0;
+            enabled = _enabled;
         }
 
         public virtual void editSettings()

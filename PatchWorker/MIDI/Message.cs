@@ -50,6 +50,28 @@ namespace Transonic.MIDI
 
                 msg = Message.getChannelMessage(msgtype, channel, b1, b2);
             }
+            else if (status == 0xF0)                        //sys ex msg
+            {
+                List<byte> bytes = new List<byte>(data);
+                msg = new SysExMessage(bytes);
+            }
+            else
+            {                                   //status msg
+                int b1 = 0;
+                int b2 = 0;
+                int datalen = SystemMessage.SysMsgLen[status - 0xF0] - 1;
+                if (datalen > 0)
+                {
+                    b1 = data[1];
+                }
+                if (datalen > 1)
+                {
+                    b2 = data[2];
+                    b1 = ((b1 % 128) * 128) + (b2 % 128);
+                }
+                msg = new SystemMessage(status, b1);
+            }
+
             return msg;
         }
 

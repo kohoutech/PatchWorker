@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 2005-2017  George E Greaney
+Copyright (C) 2005-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -129,9 +129,31 @@ namespace PatchWorker
                 }
                 catch (PatchUnitLoadException ex)
                 {
-                    String msg = "unable to load unit " + ex.unitName + "\n" + ex.Message;
-                    MessageBox.Show(msg, "Load Error");
+                    //need further error checking here
                 }
+            }
+
+            //notify user of any disabled units
+            int disabledcount = 0;
+            String disabledList = null;
+            foreach (PatchUnit unit in allUnitList)
+            {
+                if (!unit.enabled)
+                {
+                    disabledcount++;
+                    if (disabledList != null)
+                    {
+                        disabledList = disabledList + "\n";
+                    }
+                    disabledList = disabledList + unit.name;
+                }
+            }
+            if (disabledcount > 0)
+            {
+                String msg = "Couldn't load these units:\n" + disabledList +
+               "\nto enable them, reconnect them and restart Patchworker\n" +
+               "If you have removed them from your system, delete them from the menu";
+                MessageBox.Show(msg, "Warning");
             }
         }
 
@@ -146,7 +168,7 @@ namespace PatchWorker
 
             xmlWriter.WriteStartDocument();
             xmlWriter.WriteStartElement("patchworker");        
-            xmlWriter.WriteAttributeString("version", "1.1.0");
+            xmlWriter.WriteAttributeString("version", "1.2.1");
 
             window.saveToXML(xmlWriter);
             saveUnits(xmlWriter);

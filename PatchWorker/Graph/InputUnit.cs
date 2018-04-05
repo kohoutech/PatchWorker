@@ -39,8 +39,8 @@ namespace PatchWorker.Graph
         bool started;
 
         //cons
-        public InputUnit(PatchWorker _patchworker, String name, String _indevName, int _channel)
-            : base(_patchworker, name)
+        public InputUnit(PatchWorker _patchworker, String name, String _indevName, int _channel, bool enabled)
+            : base(_patchworker, name, enabled)
         {
             indevName = _indevName;
             channelNum = _channel;
@@ -120,19 +120,9 @@ namespace PatchWorker.Graph
             String devicename = unitNode.Attributes["devicename"].Value;
             int channel = Convert.ToInt32(unitNode.Attributes["channel"].Value);
 
-#if(!DEBUG)
             InputDevice inDev = patchworker.midiSystem.findInputDevice(devicename);
-            if (inDev != null)
-            {
-                return new InputUnit(patchworker, name, devicename, channel);
-            }
-            else
-            {
-                throw new PatchUnitLoadException(name, "no input device " + devicename + " found");
-            }
-#else
-            return new InputUnit(patchworker, name, devicename, channel);
-#endif
+            bool enabled = (inDev != null);
+            return new InputUnit(patchworker, name, devicename, channel, enabled);
         }
 
         public void saveToXML(XmlWriter xmlWriter)
