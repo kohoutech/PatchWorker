@@ -42,6 +42,7 @@ namespace PatchWorker.UI
         {
             panelType = "InJackPanel";
             connType = CONNECTIONTYPE.DEST;
+            frame = new Rectangle(0, 0, 100, 40);
             inJack = new Rectangle(frame.Left + 15, frame.Top + (JACKSIZE / 2), JACKSIZE, JACKSIZE);
         }
 

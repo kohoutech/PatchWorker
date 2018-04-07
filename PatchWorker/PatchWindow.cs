@@ -39,6 +39,8 @@ namespace PatchWorker
     {
         public PatchWorker patchworker;
         public PatchCanvas canvas;
+
+        String patchFolder;
         String patchFilename;
 
         int inputUnitMenuItems;
@@ -53,6 +55,7 @@ namespace PatchWorker
 
             inputUnitMenuItems = 0;
             outputUnitMenuItems = 0;
+            patchFolder = null;
             patchworker.loadConfig(this);
 
             canvas = new PatchCanvas(this);
@@ -63,15 +66,30 @@ namespace PatchWorker
             this.Text = "PatchWorker [new patch]";
         }
 
-        //reset prev window size and pos
+        //reset prev window's settings
         public void loadSettings(XmlNode windowNode)
         {
-            int posX = Convert.ToInt32(windowNode.Attributes["posX"].Value);
-            int posY = Convert.ToInt32(windowNode.Attributes["posY"].Value);
-            this.Location = new Point(posX, posY);
+            try
+            {
+                int posX = Convert.ToInt32(windowNode.Attributes["posX"].Value);
+                int posY = Convert.ToInt32(windowNode.Attributes["posY"].Value);
+                this.Location = new Point(posX, posY);
+            }
+            catch (Exception e) {}
+
+            try
+            {
             int width = Convert.ToInt32(windowNode.Attributes["width"].Value);
             int height = Convert.ToInt32(windowNode.Attributes["height"].Value);
             this.Size = new Size(width, height);
+            }
+            catch (Exception e) { }
+            
+            try
+            {
+            patchFolder = windowNode.Attributes["patchfolder"].Value;
+            }
+            catch (Exception e) { }
         }
 
         //save settings & clean up on shut down
@@ -87,6 +105,7 @@ namespace PatchWorker
             xmlWriter.WriteAttributeString("posY", this.Location.Y.ToString());
             xmlWriter.WriteAttributeString("width", this.Width.ToString());
             xmlWriter.WriteAttributeString("height", this.Height.ToString());
+            xmlWriter.WriteAttributeString("patchfolder", this.patchFolder);
             xmlWriter.WriteEndElement();
         }
 
@@ -101,7 +120,7 @@ namespace PatchWorker
 
         private void loadPatch()
         {
-            openPatchDialog.InitialDirectory = Application.StartupPath;
+            openPatchDialog.InitialDirectory = (patchFolder != null) ? patchFolder : Application.StartupPath;
             openPatchDialog.DefaultExt = "*.pwp";
             openPatchDialog.Filter = "patch files|*.pwp|All files|*.*";
             openPatchDialog.ShowDialog();

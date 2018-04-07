@@ -71,7 +71,7 @@ namespace PatchWorker.Graph
         {
             List<PatchPanel> panels = new List<PatchPanel>();
             panels.Add(new ProgramPanel(_box));
-            panels.Add(new InJackPanel(_box));
+            panels.Add(new InJackPanel(_box));              //output unit has an input jack to act as a sink
             return panels;
         }
 

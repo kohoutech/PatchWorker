@@ -48,3 +48,5 @@ namespace Transonic.MIDI.System
         }
     }
 }
+
+//Console.WriteLine("there's no sun in the shadow of the wizard");

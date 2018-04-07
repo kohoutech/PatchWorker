@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 1995-2017  George E Greaney
+Copyright (C) 1995-2018  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -44,6 +44,7 @@ namespace PatchWorker.UI
         {
             panelType = "OutJackPanel";
             connType = CONNECTIONTYPE.SOURCE;
+            frame = new Rectangle(0, 0, 100, 40);
             outJack = new Rectangle(frame.Right - (15 + JACKSIZE), frame.Top + (JACKSIZE / 2), JACKSIZE, JACKSIZE);
         }
 
@@ -125,3 +126,5 @@ namespace PatchWorker.UI
     }
 
 }
+
+//Console.WriteLine("there's no sun in the shadow of the wizard");

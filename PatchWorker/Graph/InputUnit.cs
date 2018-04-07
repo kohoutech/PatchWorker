@@ -77,21 +77,17 @@ namespace PatchWorker.Graph
         {
             if (!started)
             {
-#if(!DEBUG)
                 inputDev = patchworker.midiSystem.findInputDevice(indevName);
                 inputDev.connectUnit(this);
                 inputDev.open();
                 inputDev.start();              //open device & start receiving input
-#endif
                 started = true;
             }            
         }
 
         public override void stop()
         {
-#if(!DEBUG)
             inputDev.stop();
-#endif
             started = false;
         }
 
@@ -135,3 +131,5 @@ namespace PatchWorker.Graph
         }
     }
 }
+
+//Console.WriteLine("there's no sun in the shadow of the wizard");
