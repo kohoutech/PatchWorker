@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 1995-2018  George E Greaney
+Copyright (C) 1995-2019  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -26,6 +26,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
+using System.IO;
 
 using PatchWorker.UI;
 using PatchWorker.Graph;
@@ -55,7 +56,7 @@ namespace PatchWorker
 
             inputUnitMenuItems = 0;
             outputUnitMenuItems = 0;
-            patchFolder = null;
+            patchFolder = Application.StartupPath;
             patchworker.loadConfig(this);
 
             canvas = new PatchCanvas(this);
@@ -84,10 +85,10 @@ namespace PatchWorker
             this.Size = new Size(width, height);
             }
             catch (Exception e) { }
-            
+
             try
             {
-            patchFolder = windowNode.Attributes["patchfolder"].Value;
+                patchFolder = windowNode.Attributes["patchfolder"].Value;
             }
             catch (Exception e) { }
         }
@@ -120,7 +121,7 @@ namespace PatchWorker
 
         private void loadPatch()
         {
-            openPatchDialog.InitialDirectory = (patchFolder != null) ? patchFolder : Application.StartupPath;
+            openPatchDialog.InitialDirectory = patchFolder;
             openPatchDialog.DefaultExt = "*.pwp";
             openPatchDialog.Filter = "patch files|*.pwp|All files|*.*";
             openPatchDialog.ShowDialog();
@@ -130,6 +131,7 @@ namespace PatchWorker
                 patchFilename = filename;
                 canvas.loadPatch(patchFilename);
                 this.Text = "PatchWorker [" + patchFilename + "]";
+                patchFolder = Path.GetDirectoryName(filename);
             }
         }
 
@@ -138,17 +140,19 @@ namespace PatchWorker
             if (newName || patchFilename == null)
             {
                 String filename = "";
-                savePatchDialog.InitialDirectory = Application.StartupPath;
+                savePatchDialog.InitialDirectory = patchFolder;
                 savePatchDialog.DefaultExt = "*.pwp";
                 savePatchDialog.Filter = "patch files|*.pwp|All files|*.*";
                 savePatchDialog.ShowDialog();
                 filename = savePatchDialog.FileName;
-                if (filename.Length == 0) return;
+                if (filename.Length == 0) return;           //user canceled save dialog
 
                 //add default extention if filename doesn't have one
                 if (!filename.Contains('.'))
                     filename = filename + ".pwp";
+
                 patchFilename = filename;
+                patchFolder = Path.GetDirectoryName(patchFilename);
             }
             canvas.savePatch(patchFilename);
             String msg = "Current patch has been saved as\n " + patchFilename;

@@ -129,6 +129,8 @@
     <Compile Include="Widget\KeyboardBar.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="YAML\YAMLReader.cs" />
+    <Compile Include="YAML\YAMLWriter.cs" />
     <EmbeddedResource Include="Dialogs\OutputUnitDialog.resx">
       <DependentUpon>OutputUnitDialog.cs</DependentUpon>
     </EmbeddedResource>
