@@ -26,5 +26,6 @@ namespace Transonic.Patch
 {
     public interface IPatchView
     {
+        PatchBox getPatchBox(PaletteItem item);
     }
 }

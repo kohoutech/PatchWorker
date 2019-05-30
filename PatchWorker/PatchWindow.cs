@@ -52,6 +52,8 @@ namespace PatchWorker
         String patchFilename;
 
         bool canvasHidden;
+        public int curCanvasHeight;
+        public int minHeight;
 
         //cons
         public PatchWindow()
@@ -65,20 +67,21 @@ namespace PatchWorker
 
             //control panel goes just below menubar
             controlPanel = new ControlPanel(this);
-            this.Controls.Add(controlPanel);
             controlPanel.Location = new Point(this.ClientRectangle.Left, PatchWndMenu.Bottom);
             //controlPanel.Size = new Size(this.ClientRectangle.Width, controlPanel.Height);
             this.Controls.Add(controlPanel);
 
             //patch canvas fills up entire client area between control panel & status bar
             canvas = new PatchCanvas(this);
+            canvas.BackColor = Color.FromArgb(255, 140, 0);
             canvas.Location = new Point(this.ClientRectangle.Left, controlPanel.Bottom);
             canvas.Size = new Size(controlPanel.Width, PatchStatus.Top - controlPanel.Bottom);
             this.Controls.Add(canvas);
             canvasHidden = false;
 
             //set initial sizes
-            this.MinimumSize = new System.Drawing.Size(controlPanel.Width, this.Size.Height - canvas.Height);
+            minHeight = this.Size.Height - canvas.Height;
+            this.MinimumSize = new System.Drawing.Size(controlPanel.Width, minHeight);
             this.Size = new Size(settings.patchWndWidth, settings.patchWndHeight);
             this.Location = new Point(settings.patchWndX, settings.patchWndY);
 
@@ -87,6 +90,11 @@ namespace PatchWorker
             this.Text = "PatchWorker [new patch]";
 
             patchWork = new PatchWork(this);
+
+            //wire control panel up
+            controlPanel.canvas = canvas;
+            controlPanel.patchWork = patchWork;
+            controlPanel.updateUnitList();
         }
 
         protected override void OnResize(EventArgs e)
@@ -102,7 +110,7 @@ namespace PatchWorker
                 canvas.Size = new Size(this.ClientSize.Width, PatchStatus.Top - controlPanel.Bottom);
                 if (!canvasHidden)
                 {
-                    //settings.rackHeight = this.ClientSize.Height - (this.AudimatMenu.Height + controlPanel.Height + this.AudimatStatus.Height);
+                    settings.patchWndHeight = this.Height;
                 }
             }
         }
@@ -114,7 +122,7 @@ namespace PatchWorker
 
             settings.patchWndX = this.Location.X;
             settings.patchWndY = this.Location.Y;
-            settings.patchWndHeight = this.Height;
+            //settings.patchWndHeight = this.Height;
             settings.patchWndWidth = this.Width;
             settings.patchFolder = patchFolder;
             settings.save();
@@ -129,7 +137,7 @@ namespace PatchWorker
             this.Text = "PatchWorker [new patch]";
         }
 
-        private void loadPatch()
+        public void loadPatch()
         {
             openPatchDialog.InitialDirectory = patchFolder;
             openPatchDialog.DefaultExt = "*.pwp";
@@ -197,16 +205,18 @@ namespace PatchWorker
 
         //- unit menu ---------------------------------------------------------------
 
-        public void addInputUnitMenuItem_Click(object sender, EventArgs e)
+        public void addInputUnit()
         {
             if (midiSystem.inputDevices.Count > 0)
             {
                 InputUnitDialog unitdlg = new InputUnitDialog(this);
+                unitdlg.Icon = this.Icon;
                 unitdlg.ShowDialog();
                 if (unitdlg.DialogResult == DialogResult.OK)
                 {
-                    //InputUnit inUnit = new InputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum, true);
-                    //patchworker.addInputUnit(inUnit);
+                    InputUnit inUnit = new InputUnit(unitdlg.name, unitdlg.devName, unitdlg.chanNum);
+                    settings.addInputUnit(inUnit);
+                    controlPanel.updateUnitList();
                 }
             }
             else
@@ -216,22 +226,24 @@ namespace PatchWorker
             }
         }
 
-        public void addModifierUnitMenuItem_Click(object sender, EventArgs e)
+        public void addModifierUnit()
         {
             String msg = "Patchworker modifers are still in development. Anon! Anon!";
             MessageBox.Show(msg, "In the works");
         }
 
-        public void addOutputUnitMenuItem_Click(object sender, EventArgs e)
+        public void addOutputUnit()
         {
             if (midiSystem.outputDevices.Count > 0)
             {
                 OutputUnitDialog unitdlg = new OutputUnitDialog(this);
+                unitdlg.Icon = this.Icon;
                 unitdlg.ShowDialog();
                 if (unitdlg.DialogResult == DialogResult.OK)
                 {
-            //        OutputUnit outUnit = new OutputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum, unitdlg.progNum, true);
-            //        patchworker.addOutputUnit(outUnit);
+                    OutputUnit outUnit = new OutputUnit(unitdlg.name, unitdlg.devName, unitdlg.chanNum);
+                    settings.addOutputUnit(outUnit);
+                    controlPanel.updateUnitList();
                 }
             }
             else
@@ -241,13 +253,60 @@ namespace PatchWorker
             }
         }
 
+        private void addInputUnitMenuItem_Click(object sender, EventArgs e)
+        {
+            addInputUnit();
+        }
+
+        private void addModifierUnitMenuItem_Click(object sender, EventArgs e)
+        {
+            addModifierUnit();
+        }
+
+        private void addOutputUnitMenuItem_Click(object sender, EventArgs e)
+        {
+            addOutputUnit();
+        }
+
+        //- canvas menu ----------------------------------------------------------------
+
+        public void hideCanvas()
+        {
+            if (!canvasHidden)
+            {
+                canvasHidden = true;
+                curCanvasHeight = this.ClientSize.Height;
+                this.ClientSize = new System.Drawing.Size(canvas.Size.Width, minHeight);
+                this.MaximumSize = new System.Drawing.Size(Int32.MaxValue, minHeight);
+            }
+            else
+            {
+                canvasHidden = false;
+                this.MaximumSize = new System.Drawing.Size(0, 0);
+                this.ClientSize = new System.Drawing.Size(canvas.Size.Width, curCanvasHeight);
+            }
+        }
+
+        private void hideShowCanvasMenuItem_Click(object sender, EventArgs e)
+        {
+            hideCanvas();
+        }
+
         //- help menu ----------------------------------------------------------------
 
         private void helpAboutMenuItem_Click(object sender, EventArgs e)
         {
-            String msg = "Patchworker\nversion " + Settings.VERSION + "\n\xA9 Transonic Software 1997-2019\n" +
+            String msg = "Patchworker\nversion " + Settings.VERSION + "\n\xA9 Transonic Software 1995-2019\n" +
                 "http://transonic.kohoutech.com";
             MessageBox.Show(msg, "About");
+        }
+
+        //- IPatchView interface ----------------------------------------------
+
+        public PatchBox getPatchBox(PaletteItem item)
+        {
+            PatchBox newBox = new PatchBox();
+            return newBox;
         }
     }
 }

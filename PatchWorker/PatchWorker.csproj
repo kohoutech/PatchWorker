@@ -113,7 +113,9 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Patch\PatchLine.cs" />
-    <Compile Include="Patch\PatchPalette.cs" />
+    <Compile Include="Patch\PatchPalette.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Patch\PatchPanel.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

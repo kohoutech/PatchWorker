@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Transonic Patch Library
-Copyright (C) 1995-2018  George E Greaney
+Copyright (C) 1995-2019  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -32,6 +32,8 @@ namespace Transonic.Patch
     public class PatchCanvas : Control
     {
         public IPatchView patchwin;         //the window that holds this canvas
+        public PatchPalette palette;
+
         List<PatchBox> boxList;             //the boxes on the canvas
         List<PatchLine> lineList;           //the connector lines on the canvas
 
@@ -59,6 +61,12 @@ namespace Transonic.Patch
         public PatchCanvas(IPatchView _patchwin)
         {
             patchwin = _patchwin;
+
+            palette = new PatchPalette(this);
+            palette.Location = new Point(this.ClientRectangle.Left, this.ClientRectangle.Top);
+            palette.Size = new Size(palette.Width, this.ClientRectangle.Height);
+            this.Controls.Add(palette);
+
             boxList = new List<PatchBox>();
             lineList = new List<PatchLine>();
 
@@ -66,7 +74,7 @@ namespace Transonic.Patch
             newBoxOfs = new Point(20, 20);
             newBoxPos = new Point(newBoxOrg.X, newBoxOrg.Y);
 
-            this.BackColor = Color.FromArgb(0xFF, 0x75, 0x00);
+            this.BackColor = Color.White;
             this.DoubleBuffered = true;
 
             selectedBox = null;             //selecting
@@ -77,6 +85,40 @@ namespace Transonic.Patch
             targetPanel = null;
             tracking = false;
             trackingPanel = null;
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (palette != null)
+            {
+                palette.Size = new Size(palette.Width, this.ClientRectangle.Height);
+            }
+        }
+
+        //- palette management ----------------------------------------------------------
+
+        public void openPalette(bool isOpen)
+        {
+            if (isOpen)
+            {
+               palette.Location = new Point(this.ClientRectangle.Left, this.ClientRectangle.Top);
+            }
+            else
+            {
+                palette.Location = new Point(this.ClientRectangle.Left - palette.Width + palette.buttonWidth, this.ClientRectangle.Top);
+            }
+        }
+
+        public void setPaletteItems(List<PaletteItem> items)
+        {
+            palette.setItems(items);
+        }
+
+        public void handlePaletteItemDoubleClick(PaletteItem item)
+        {
+            PatchBox newBox = patchwin.getPatchBox(item);
+            addPatchBox(newBox);
         }
 
 //- patch management ----------------------------------------------------------
@@ -102,73 +144,6 @@ namespace Transonic.Patch
             newBoxPos = new Point(newBoxOrg.X, newBoxOrg.Y);            
         }
 
-        public void loadPatch(String patchFileName)
-        {
-            clearPatch();       //start with a clean slate
-
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.Load(patchFileName);
-
-            foreach (XmlNode patchNode in xmlDoc.DocumentElement.ChildNodes)
-            {
-                if (patchNode.Name.Equals("boxes"))
-                {
-                    foreach (XmlNode boxNode in patchNode.ChildNodes)
-                    {
-                        loadPatchBox(boxNode);
-                    }
-                }
-                if (patchNode.Name.Equals("connections"))
-                {
-                    foreach (XmlNode lineNode in patchNode.ChildNodes)
-                    {
-                        loadPatchLine(lineNode);
-                    }
-                }
-            }
-
-            //renumber boxes
-            int boxNum = 0;
-            foreach (PatchBox box in boxList)
-            {
-                box.boxNum = ++boxNum;
-                box.RenumberPanels();
-            }
-            PatchBox.boxCount = boxNum;
-
-            Invalidate();
-        }
-
-        public void savePatch(String patchFileName)
-        {
-            var settings = new XmlWriterSettings();
-            settings.OmitXmlDeclaration = true;
-            settings.Indent = true;
-            settings.NewLineOnAttributes = true;
-
-            XmlWriter xmlWriter = XmlWriter.Create(patchFileName, settings);
-
-            xmlWriter.WriteStartDocument();
-            xmlWriter.WriteStartElement("patchworkerpatch");
-            xmlWriter.WriteAttributeString("version", "1.1.0");
-
-            xmlWriter.WriteStartElement("boxes");
-            foreach (PatchBox box in boxList)
-            {
-                box.saveToXML(xmlWriter);
-            }
-            xmlWriter.WriteEndElement();
-
-            xmlWriter.WriteStartElement("connections");
-            foreach (PatchLine line in lineList)
-            {
-                line.saveToXML(xmlWriter);
-            }
-            xmlWriter.WriteEndElement();
-
-            xmlWriter.WriteEndDocument();
-            xmlWriter.Close();
-        }
         
 //- box methods ---------------------------------------------------------------
 
@@ -185,14 +160,18 @@ namespace Transonic.Patch
             Invalidate();
         }
 
-        public void loadPatchBox(XmlNode boxNode)
+        //public void loadPatchBox(XmlNode boxNode)
+        //{
+        //    PatchBox box = PatchBox.loadFromXML(boxNode);
+        //    if (box != null)
+        //    {
+        //        box.canvas = this;
+        //        boxList.Add(box);
+        //    }
+        //}
+
+        public void movePatchBox(PatchBox box)
         {
-            PatchBox box = PatchBox.loadFromXML(boxNode);
-            if (box != null)
-            {
-                box.canvas = this;
-                boxList.Add(box);
-            }
         }
 
         public void removePatchBox(PatchBox box)
@@ -254,14 +233,14 @@ namespace Transonic.Patch
             lineList.Add(line);                                         //add to canvas
         }
 
-        public void loadPatchLine(XmlNode lineNode)
-        {
-            PatchLine line = PatchLine.loadFromXML(this, lineNode);
-            if (line != null)
-            {
-                lineList.Add(line);
-            }
-        }
+        //public void loadPatchLine(XmlNode lineNode)
+        //{
+        //    PatchLine line = PatchLine.loadFromXML(this, lineNode);
+        //    if (line != null)
+        //    {
+        //        lineList.Add(line);
+        //    }
+        //}
 
         //patch line will be connected to source jack, but may or may not be connected to dest jack
         public void removePatchLine(PatchLine line)
@@ -572,6 +551,7 @@ namespace Transonic.Patch
                 g.DrawLine(Pens.Red, connectLineStart, connectLineEnd);
             }
         }
+
     }
 
     public class PatchLoadException : Exception

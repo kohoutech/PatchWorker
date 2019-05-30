@@ -36,16 +36,18 @@
             this.fileMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.newFileMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openFileMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator = new System.Windows.Forms.ToolStripSeparator();
             this.saveFileMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveAsFileMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator = new System.Windows.Forms.ToolStripSeparator();
             this.exitFileMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.unitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addInputUnitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addModiferUnitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addOutputUnitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.helpMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.aboutHelpMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.canvasMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.hideShowCanvasMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.PatchWndMenu.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -70,7 +72,8 @@
             this.PatchWndMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileMenuItem,
             this.unitMenuItem,
-            this.helpToolStripMenuItem});
+            this.canvasMenuItem,
+            this.helpMenuItem});
             this.PatchWndMenu.Location = new System.Drawing.Point(0, 0);
             this.PatchWndMenu.Name = "PatchWndMenu";
             this.PatchWndMenu.Size = new System.Drawing.Size(384, 24);
@@ -113,11 +116,6 @@
             this.openFileMenuItem.Text = "&Open Patch";
             this.openFileMenuItem.Click += new System.EventHandler(this.patchLoadMenuItem_Click);
             // 
-            // toolStripSeparator
-            // 
-            this.toolStripSeparator.Name = "toolStripSeparator";
-            this.toolStripSeparator.Size = new System.Drawing.Size(176, 6);
-            // 
             // saveFileMenuItem
             // 
             this.saveFileMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
@@ -136,6 +134,11 @@
             this.saveAsFileMenuItem.Size = new System.Drawing.Size(179, 22);
             this.saveAsFileMenuItem.Text = "Save Patch &As";
             this.saveAsFileMenuItem.Click += new System.EventHandler(this.patchSaveAsMenuItem_Click);
+            // 
+            // toolStripSeparator
+            // 
+            this.toolStripSeparator.Name = "toolStripSeparator";
+            this.toolStripSeparator.Size = new System.Drawing.Size(176, 6);
             // 
             // exitFileMenuItem
             // 
@@ -176,20 +179,35 @@
             this.addOutputUnitMenuItem.Text = "Add &Output Unit";
             this.addOutputUnitMenuItem.Click += new System.EventHandler(this.addOutputUnitMenuItem_Click);
             // 
-            // helpToolStripMenuItem
+            // helpMenuItem
             // 
-            this.helpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.aboutToolStripMenuItem});
-            this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
-            this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
-            this.helpToolStripMenuItem.Text = "&Help";
+            this.helpMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.aboutHelpMenuItem});
+            this.helpMenuItem.Name = "helpMenuItem";
+            this.helpMenuItem.Size = new System.Drawing.Size(44, 20);
+            this.helpMenuItem.Text = "&Help";
             // 
-            // aboutToolStripMenuItem
+            // aboutHelpMenuItem
             // 
-            this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.aboutToolStripMenuItem.Text = "&About...";
-            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.helpAboutMenuItem_Click);
+            this.aboutHelpMenuItem.Name = "aboutHelpMenuItem";
+            this.aboutHelpMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.aboutHelpMenuItem.Text = "&About...";
+            this.aboutHelpMenuItem.Click += new System.EventHandler(this.helpAboutMenuItem_Click);
+            // 
+            // canvasMenuItem
+            // 
+            this.canvasMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.hideShowCanvasMenuItem});
+            this.canvasMenuItem.Name = "canvasMenuItem";
+            this.canvasMenuItem.Size = new System.Drawing.Size(57, 20);
+            this.canvasMenuItem.Text = "&Canvas";
+            // 
+            // hideShowCanvasMenuItem
+            // 
+            this.hideShowCanvasMenuItem.Name = "hideShowCanvasMenuItem";
+            this.hideShowCanvasMenuItem.Size = new System.Drawing.Size(174, 22);
+            this.hideShowCanvasMenuItem.Text = "&Hide/Show Canvas";
+            this.hideShowCanvasMenuItem.Click += new System.EventHandler(this.hideShowCanvasMenuItem_Click);
             // 
             // PatchWindow
             // 
@@ -228,9 +246,11 @@
         private System.Windows.Forms.ToolStripMenuItem unitMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addInputUnitMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addModiferUnitMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem helpMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem aboutHelpMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addOutputUnitMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem canvasMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem hideShowCanvasMenuItem;
     }
 }
 
