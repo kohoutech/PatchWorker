@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 2005-2018  George E Greaney
+Copyright (C) 1995-2019  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,14 +21,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Xml;
 //using System.Windows.Forms;
 
+using PatchWorker.UI;
+using PatchWorker.Dialogs;
 using Transonic.MIDI;
 using Transonic.MIDI.System;
 using Transonic.Patch;
-using PatchWorker.UI;
-using PatchWorker.Dialogs;
+using Origami.ENAML;
 
 namespace PatchWorker.Graph
 {
@@ -39,8 +39,8 @@ namespace PatchWorker.Graph
         bool started;
 
         //cons
-        public InputUnit(PatchWorker _patchworker, String name, String _indevName, int _channel, bool enabled)
-            : base(_patchworker, name, enabled)
+        public InputUnit(String name, String _indevName, int _channel)
+            : base(name)
         {
             indevName = _indevName;
             channelNum = _channel;
@@ -49,7 +49,8 @@ namespace PatchWorker.Graph
 
         public override void editSettings()
         {
-            InputUnitDialog unitdlg = new InputUnitDialog(patchworker, name, indevName, channelNum);
+            //InputUnitDialog unitdlg = new InputUnitDialog(patchworker, name, indevName, channelNum);
+            InputUnitDialog unitdlg = null;
             unitdlg.ShowDialog();
             if (unitdlg.DialogResult == System.Windows.Forms.DialogResult.OK)
             {
@@ -71,18 +72,18 @@ namespace PatchWorker.Graph
             return panels;
         }
 
-//- operation ---------------------------------------------------------------
+        //- operation ---------------------------------------------------------------
 
         public override void start()
         {
             if (!started)
             {
-                inputDev = patchworker.midiSystem.findInputDevice(indevName);
+                //inputDev = patchworker.midiSystem.findInputDevice(indevName);
                 inputDev.connectUnit(this);
                 inputDev.open();
                 inputDev.start();              //open device & start receiving input
                 started = true;
-            }            
+            }
         }
 
         public override void stop()
@@ -96,7 +97,7 @@ namespace PatchWorker.Graph
             Message msg = Message.getMessage(data);                  //convert incoming bytes into midi message
 
             if ((msg is ChannelMessage) &&                              //filter channel msgs by channel num
-                (((ChannelMessage)msg).channel == (channelNum - 1))  || 
+                (((ChannelMessage)msg).channel == (channelNum - 1)) ||
                 (msg is SystemMessage))
             {
                 processMidiMsg(msg);                                    //and send it on its way
@@ -108,26 +109,22 @@ namespace PatchWorker.Graph
             base.processMidiMsg(msg);
         }
 
-//- persistance ---------------------------------------------------------------
+        //- persistance ---------------------------------------------------------------
 
-        public static InputUnit loadFromXML(PatchWorker patchworker, XmlNode unitNode)
+        public static InputUnit loadFromConfig(EnamlData data, String path)
         {
-            String name = unitNode.Attributes["name"].Value;
-            String devicename = unitNode.Attributes["devicename"].Value;
-            int channel = Convert.ToInt32(unitNode.Attributes["channel"].Value);
+            String name = data.getStringValue(path + ".name", "no name");
+            String devicename = data.getStringValue(path + ".device-name", "no name");
+            int channel = data.getIntValue(path + ".channel", 0);
 
-            InputDevice inDev = patchworker.midiSystem.findInputDevice(devicename);
-            bool enabled = (inDev != null);
-            return new InputUnit(patchworker, name, devicename, channel, enabled);
+            return new InputUnit(name, devicename, channel);
         }
 
-        public void saveToXML(XmlWriter xmlWriter)
+        public void saveToConfig(EnamlData data, String path)
         {
-            xmlWriter.WriteStartElement("inputunit");
-            xmlWriter.WriteAttributeString("name", name);
-            xmlWriter.WriteAttributeString("devicename", indevName);
-            xmlWriter.WriteAttributeString("channel", channelNum.ToString());
-            xmlWriter.WriteEndElement();
+            data.setStringValue(path + ".name", name);
+            data.setStringValue(path + ".device-name", indevName);
+            data.setIntValue(path + ".channel", channelNum);
         }
     }
 }

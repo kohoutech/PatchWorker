@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 2005-2017  George E Greaney
+Copyright (C) 1995-2019  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -31,23 +31,24 @@ namespace PatchWorker.Dialogs
 {
     public partial class OutputUnitDialog : Form
     {
-        public PatchWorker patchworker;
+        PatchWindow patchWnd;
+
         List<String> channelNums;
         public String name;
         public String devName;
         public int chanNum;
         public int progNum;
 
-        public OutputUnitDialog(PatchWorker _patchworker)
+        //for creating new output units
+        public OutputUnitDialog(PatchWindow _patchWnd)
         {
-            patchworker = _patchworker;
+            patchWnd = _patchWnd;
 
             InitializeComponent();
 
-            channelNums = new List<string>() { "1", "2", "3", "4", "5", "6", "7", "8", "9", 
-                "10", "11", "12", "13", "14", "15", "16" };
+            channelNums = new List<string>() { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" };
 
-            cbxDevice.DataSource = patchworker.midiSystem.getOutDevNameList();
+            cbxDevice.DataSource = patchWnd.midiSystem.getOutDevNameList();
             cbxDevice.SelectedIndex = -1;
             cbxChannel.DataSource = channelNums;
             cbxChannel.SelectedIndex = -1;
@@ -58,27 +59,30 @@ namespace PatchWorker.Dialogs
             progNum = 0;
         }
 
-        public OutputUnitDialog(PatchWorker _patchworker, String _name, String _devName, int _chanNum, int _progNum)
-            : this(_patchworker)
+        //for updating existing output units
+        public OutputUnitDialog(PatchWindow _patchWnd, String _name, String _devName, int _chanNum, int _progNum)
+            : this(_patchWnd)
         {
             txtName.Text = _name;
             cbxDevice.SelectedIndex = -1;
+
+            //set current device in drop list list
             for (int i = 0; i < cbxDevice.Items.Count; i++)
             {
                 String item = (String)cbxDevice.Items[i];
-                if (item.Equals(_devName)) {
+                if (item.Equals(_devName))
+                {
                     cbxDevice.SelectedIndex = i;
-                    break;            
+                    break;
                 }
             }
             cbxChannel.SelectedIndex = _chanNum - 1;
             txtProgCount.Text = _progNum.ToString();
         }
 
+        //- button methods ------------------------------------------------------------
 
-
-//- button methods ------------------------------------------------------------
-
+        //attached to dialog's control to validate when they loose focus
         private void validateControlData(object sender, EventArgs e)
         {
             bool passed = !(txtName.Text.Equals(""));
@@ -94,7 +98,7 @@ namespace PatchWorker.Dialogs
         private void btnOK_Click(object sender, EventArgs e)
         {
             name = txtName.Text;
-            devName = patchworker.midiSystem.outputDevices[cbxDevice.SelectedIndex].devName;
+            devName = patchWnd.midiSystem.outputDevices[cbxDevice.SelectedIndex].devName;
             chanNum = cbxChannel.SelectedIndex + 1;
 
             try

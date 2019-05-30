@@ -31,86 +31,96 @@ using System.IO;
 using PatchWorker.UI;
 using PatchWorker.Graph;
 using PatchWorker.Dialogs;
-using Transonic.MIDI.System;
 using Transonic.Patch;
+using Transonic.MIDI.System;
 
 namespace PatchWorker
 {
     public partial class PatchWindow : Form, IPatchView
     {
-        public PatchWorker patchworker;
+        //the front end
+        public ControlPanel controlPanel;
         public PatchCanvas canvas;
+
+        //the back end
+        public PatchWork patchWork;             
+        public MidiSystem midiSystem;           
+
+        public Settings settings;
 
         String patchFolder;
         String patchFilename;
 
-        int inputUnitMenuItems;
-        int outputUnitMenuItems;
+        bool canvasHidden;
 
         //cons
         public PatchWindow()
         {
-            patchworker = new PatchWorker(this);
+            //start up midi engine
+            midiSystem = new MidiSystem();
+
+            settings = new Settings(this);          //read prog settings & unit list in from config file
 
             InitializeComponent();
 
-            inputUnitMenuItems = 0;
-            outputUnitMenuItems = 0;
-            patchFolder = Application.StartupPath;
-            patchworker.loadConfig(this);
+            //control panel goes just below menubar
+            controlPanel = new ControlPanel(this);
+            this.Controls.Add(controlPanel);
+            controlPanel.Location = new Point(this.ClientRectangle.Left, PatchWndMenu.Bottom);
+            //controlPanel.Size = new Size(this.ClientRectangle.Width, controlPanel.Height);
+            this.Controls.Add(controlPanel);
 
+            //patch canvas fills up entire client area between control panel & status bar
             canvas = new PatchCanvas(this);
-            canvas.Dock = DockStyle.Fill;
+            canvas.Location = new Point(this.ClientRectangle.Left, controlPanel.Bottom);
+            canvas.Size = new Size(controlPanel.Width, PatchStatus.Top - controlPanel.Bottom);
             this.Controls.Add(canvas);
+            canvasHidden = false;
 
+            //set initial sizes
+            this.MinimumSize = new System.Drawing.Size(controlPanel.Width, this.Size.Height - canvas.Height);
+            this.Size = new Size(settings.patchWndWidth, settings.patchWndHeight);
+            this.Location = new Point(settings.patchWndX, settings.patchWndY);
+
+            patchFolder = settings.patchFolder;
             patchFilename = null;
             this.Text = "PatchWorker [new patch]";
+
+            patchWork = new PatchWork(this);
         }
 
-        //reset prev window's settings
-        public void loadSettings(XmlNode windowNode)
+        protected override void OnResize(EventArgs e)
         {
-            try
+            base.OnResize(e);
+            if (controlPanel != null)
             {
-                int posX = Convert.ToInt32(windowNode.Attributes["posX"].Value);
-                int posY = Convert.ToInt32(windowNode.Attributes["posY"].Value);
-                this.Location = new Point(posX, posY);
+                controlPanel.Size = new Size(this.ClientSize.Width, controlPanel.Height);
             }
-            catch (Exception e) {}
 
-            try
+            if (canvas != null)
             {
-            int width = Convert.ToInt32(windowNode.Attributes["width"].Value);
-            int height = Convert.ToInt32(windowNode.Attributes["height"].Value);
-            this.Size = new Size(width, height);
+                canvas.Size = new Size(this.ClientSize.Width, PatchStatus.Top - controlPanel.Bottom);
+                if (!canvasHidden)
+                {
+                    //settings.rackHeight = this.ClientSize.Height - (this.AudimatMenu.Height + controlPanel.Height + this.AudimatStatus.Height);
+                }
             }
-            catch (Exception e) { }
-
-            try
-            {
-                patchFolder = windowNode.Attributes["patchfolder"].Value;
-            }
-            catch (Exception e) { }
         }
 
         //save settings & clean up on shut down
         private void PatchWindow_FormClosed(object sender, FormClosedEventArgs e)
         {
-            patchworker.shutdown(this);
+            midiSystem.shutdown();
+
+            settings.patchWndX = this.Location.X;
+            settings.patchWndY = this.Location.Y;
+            settings.patchWndHeight = this.Height;
+            settings.patchWndWidth = this.Width;
+            settings.patchFolder = patchFolder;
+            settings.save();
         }
 
-        public void saveToXML(XmlWriter xmlWriter)
-        {
-            xmlWriter.WriteStartElement("patchwindow");
-            xmlWriter.WriteAttributeString("posX", this.Location.X.ToString());
-            xmlWriter.WriteAttributeString("posY", this.Location.Y.ToString());
-            xmlWriter.WriteAttributeString("width", this.Width.ToString());
-            xmlWriter.WriteAttributeString("height", this.Height.ToString());
-            xmlWriter.WriteAttributeString("patchfolder", this.patchFolder);
-            xmlWriter.WriteEndElement();
-        }
-
-//- file menu -----------------------------------------------------------------
+        //- file menu -----------------------------------------------------------------
 
         public void newPatch()
         {
@@ -129,7 +139,7 @@ namespace PatchWorker
             if (filename.Length > 0)
             {
                 patchFilename = filename;
-                canvas.loadPatch(patchFilename);
+                patchWork.loadPatch(patchFilename);
                 this.Text = "PatchWorker [" + patchFilename + "]";
                 patchFolder = Path.GetDirectoryName(filename);
             }
@@ -154,10 +164,10 @@ namespace PatchWorker
                 patchFilename = filename;
                 patchFolder = Path.GetDirectoryName(patchFilename);
             }
-            canvas.savePatch(patchFilename);
+            patchWork.savePatch(patchFilename);
             String msg = "Current patch has been saved as\n " + patchFilename;
             MessageBox.Show(msg, "Saved");
-            this.Text = "PatchWorker [" + patchFilename + "]";            
+            this.Text = "PatchWorker [" + patchFilename + "]";
         }
 
         private void patchNewMenuItem_Click(object sender, EventArgs e)
@@ -185,56 +195,18 @@ namespace PatchWorker
             Application.Exit();
         }
 
-//- unit menu ---------------------------------------------------------------
-
-        public void addInputUnitToMenu(PatchUnit unit)
-        {
-            ToolStripItem inputItem = new ToolStripMenuItem(unit.name);
-            inputItem.Click += new EventHandler(unitSelectMenuItem_Click);
-            inputItem.Tag = unit;
-            inputItem.Enabled = unit.enabled;
-            unit.setMenuItem(inputItem);
-
-            if (inputUnitMenuItems == 0)
-            {
-                unitMenuItem.DropDownItems.Add(new ToolStripSeparator());
-                inputUnitMenuItems++;
-            }
-            unitMenuItem.DropDownItems.Insert((3 + inputUnitMenuItems), inputItem);
-            inputUnitMenuItems++;
-        }
-
-        public void addModifierUnitToMenu(PatchUnit unit)
-        {
-        }
-
-        public void addOutputUnitToMenu(PatchUnit unit)
-        {
-            ToolStripItem outputItem = new ToolStripMenuItem(unit.name);
-            outputItem.Click += new EventHandler(unitSelectMenuItem_Click);
-            outputItem.Tag = unit;
-            outputItem.Enabled = unit.enabled;
-            unit.setMenuItem(outputItem);
-
-            if (outputUnitMenuItems == 0)
-            {
-                unitMenuItem.DropDownItems.Add(new ToolStripSeparator());
-                outputUnitMenuItems++;
-            }
-            unitMenuItem.DropDownItems.Insert((3 + inputUnitMenuItems + outputUnitMenuItems), outputItem);
-            outputUnitMenuItems++;
-        }
+        //- unit menu ---------------------------------------------------------------
 
         public void addInputUnitMenuItem_Click(object sender, EventArgs e)
         {
-            if (patchworker.midiSystem.inputDevices.Count > 0)
+            if (midiSystem.inputDevices.Count > 0)
             {
-                InputUnitDialog unitdlg = new InputUnitDialog(patchworker);
+                InputUnitDialog unitdlg = new InputUnitDialog(this);
                 unitdlg.ShowDialog();
                 if (unitdlg.DialogResult == DialogResult.OK)
                 {
-                    InputUnit inUnit = new InputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum, true);
-                    patchworker.addInputUnit(inUnit);
+                    //InputUnit inUnit = new InputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum, true);
+                    //patchworker.addInputUnit(inUnit);
                 }
             }
             else
@@ -252,14 +224,14 @@ namespace PatchWorker
 
         public void addOutputUnitMenuItem_Click(object sender, EventArgs e)
         {
-            if (patchworker.midiSystem.outputDevices.Count > 0)
+            if (midiSystem.outputDevices.Count > 0)
             {
-                OutputUnitDialog unitdlg = new OutputUnitDialog(patchworker);
+                OutputUnitDialog unitdlg = new OutputUnitDialog(this);
                 unitdlg.ShowDialog();
                 if (unitdlg.DialogResult == DialogResult.OK)
                 {
-                    OutputUnit outUnit = new OutputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum, unitdlg.progNum, true);
-                    patchworker.addOutputUnit(outUnit);
+            //        OutputUnit outUnit = new OutputUnit(patchworker, unitdlg.name, unitdlg.devName, unitdlg.chanNum, unitdlg.progNum, true);
+            //        patchworker.addOutputUnit(outUnit);
                 }
             }
             else
@@ -269,23 +241,11 @@ namespace PatchWorker
             }
         }
 
-        //handler for all unit menu items
-        private void unitSelectMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripItem item = (ToolStripItem)sender;
-            PatchUnit unit = (PatchUnit)item.Tag;                      //get patch unit obj from menu item
-
-            patchworker.addUnitToPatch(unit);               //add patch unit to graph
-            PatchUnitBox box = new PatchUnitBox(unit);      //create new patch box from unit
-            canvas.addPatchBox(box);                        //and add it to canvas
-        }
-
-//- help menu ----------------------------------------------------------------
+        //- help menu ----------------------------------------------------------------
 
         private void helpAboutMenuItem_Click(object sender, EventArgs e)
         {
-            String msg = "Patchworker\nversion 1.2.1\n" + 
-                "\xA9 Transonic Software 1997-2018\n" + 
+            String msg = "Patchworker\nversion " + Settings.VERSION + "\n\xA9 Transonic Software 1997-2019\n" +
                 "http://transonic.kohoutech.com";
             MessageBox.Show(msg, "About");
         }

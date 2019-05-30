@@ -37,13 +37,13 @@
     <StartupObject />
   </PropertyGroup>
   <PropertyGroup>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>Icon1.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>Kohoutech.pfx</AssemblyOriginatorKeyFile>
@@ -79,10 +79,12 @@
     <Compile Include="Dialogs\PatchCordDialog.Designer.cs">
       <DependentUpon>PatchCordDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="ENAML\EnamlData.cs" />
     <Compile Include="Graph\InputUnit.cs" />
     <Compile Include="Graph\ModifierUnit.cs" />
     <Compile Include="Graph\OutputUnit.cs" />
     <Compile Include="Graph\PatchCord.cs" />
+    <Compile Include="Graph\PatchWork.cs" />
     <Compile Include="Graph\PatchUnit.cs" />
     <Compile Include="Graph\Programmer.cs" />
     <Compile Include="MIDI\MarkerMap.cs" />
@@ -105,16 +107,20 @@
       <DependentUpon>PatchWindow.cs</DependentUpon>
     </Compile>
     <Compile Include="MIDI\System\SystemUnit.cs" />
-    <Compile Include="PatchWorker.cs" />
     <Compile Include="Patch\IPatchView.cs" />
     <Compile Include="Patch\PatchBox.cs" />
     <Compile Include="Patch\PatchCanvas.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Patch\PatchLine.cs" />
+    <Compile Include="Patch\PatchPalette.cs" />
     <Compile Include="Patch\PatchPanel.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Settings.cs" />
+    <Compile Include="UI\ControlPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="UI\InJackPanel.cs" />
     <Compile Include="UI\OutJackPanel.cs" />
     <Compile Include="UI\PatchUnitBox.cs" />
@@ -129,8 +135,6 @@
     <Compile Include="Widget\KeyboardBar.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="YAML\YAMLReader.cs" />
-    <Compile Include="YAML\YAMLWriter.cs" />
     <EmbeddedResource Include="Dialogs\OutputUnitDialog.resx">
       <DependentUpon>OutputUnitDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -154,6 +158,9 @@
     </Compile>
     <EmbeddedResource Include="Dialogs\InputUnitDialog.resx">
       <DependentUpon>InputUnitDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ControlPanel.resx">
+      <DependentUpon>ControlPanel.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Widget\KeyboardBar.resx">
       <DependentUpon>KeyboardBar.cs</DependentUpon>

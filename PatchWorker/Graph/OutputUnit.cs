@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 2005-2018  George E Greaney
+Copyright (C) 1995-2019  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,13 +21,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Xml;
 
 using Transonic.MIDI;
 using Transonic.MIDI.System;
 using Transonic.Patch;
 using PatchWorker.UI;
 using PatchWorker.Dialogs;
+using Origami.ENAML;
 
 namespace PatchWorker.Graph
 {
@@ -39,19 +39,21 @@ namespace PatchWorker.Graph
         bool started;
 
         //user cons
-        public OutputUnit(PatchWorker _patchworker, String name, String _outDevName, int _channel, int _progCount, bool enabled)
-            : base(_patchworker, name, enabled)
+        public OutputUnit(String name, String _outDevName, int _channel)
+            : base(name)
         {
             outDevName = _outDevName;
             channelNum = _channel;
-            progCount = _progCount;
+            //progCount = _progCount;
+            progCount = 0;
             programmer = new Programmer(this);
-            started = false;            
+            started = false;
         }
 
         public override void editSettings()
         {
-            OutputUnitDialog unitdlg = new OutputUnitDialog(patchworker, name, outDevName, channelNum, progCount);
+            //OutputUnitDialog unitdlg = new OutputUnitDialog(patchworker, name, outDevName, channelNum, progCount);
+            OutputUnitDialog unitdlg = null;
             unitdlg.ShowDialog();
             if (unitdlg.DialogResult == System.Windows.Forms.DialogResult.OK)
             {
@@ -81,7 +83,7 @@ namespace PatchWorker.Graph
         {
             if (!started)
             {
-                outDev = patchworker.midiSystem.findOutputDevice(outDevName);
+                //outDev = patchworker.midiSystem.findOutputDevice(outDevName);
                 outDev.open();
             }
         }
@@ -113,44 +115,20 @@ namespace PatchWorker.Graph
 
 //- persistance ---------------------------------------------------------------
 
-        public static OutputUnit loadFromXML(PatchWorker patchworker, XmlNode unitNode)
+        public static OutputUnit loadFromConfig(EnamlData data, String path)
         {
-            OutputUnit result = null;
-            String name = unitNode.Attributes["name"].Value;
-            String devicename = unitNode.Attributes["devicename"].Value;
-            int channel = Convert.ToInt32(unitNode.Attributes["channel"].Value);
-            int progcount = Convert.ToInt32(unitNode.Attributes["progcount"].Value);
+            String name = data.getStringValue(path + ".name", "no name");
+            String devicename = data.getStringValue(path + ".device-name", "no name");
+            int channel = data.getIntValue(path + ".channel", 0);
 
-            OutputDevice outDev = patchworker.midiSystem.findOutputDevice(devicename);
-            bool enabled = (outDev != null);
-            result = new OutputUnit(patchworker, name, devicename, channel, progcount, enabled);
-
-            //load programmer for unit
-            if (enabled)
-            {
-                foreach (XmlNode node in unitNode.ChildNodes)
-                {
-                    if (node.Name.Equals("programmer"))
-                    {
-                        result.programmer = Programmer.loadFromXML(result, node);
-                    }
-                }
-            }
-            return result;
+            return new OutputUnit(name, devicename, channel);
         }
 
-        public void saveToXML(XmlWriter xmlWriter)
+        public void saveToConfig(EnamlData data, String path)
         {
-            xmlWriter.WriteStartElement("outputunit");
-            xmlWriter.WriteAttributeString("name", name);
-            xmlWriter.WriteAttributeString("devicename", outDevName);
-            xmlWriter.WriteAttributeString("channel", channelNum.ToString());
-            xmlWriter.WriteAttributeString("progcount", progCount.ToString());
-            if (programmer != null)
-            {
-                programmer.saveToXML(xmlWriter);
-            }
-            xmlWriter.WriteEndElement();
+            data.setStringValue(path + ".name", name);
+            data.setStringValue(path + ".device-name", outDevName);
+            data.setIntValue(path + ".channel", channelNum);
         }
     }
 }

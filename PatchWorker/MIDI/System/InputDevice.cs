@@ -54,8 +54,8 @@ namespace Transonic.MIDI.System
         public IntPtr devHandle;
 
         private MidiInProc midiInProc;
-        private bool opened;
-        private bool started;
+        public bool opened;
+        public bool started;
         
         const int CALLBACK_FUNCTION = 0x30000;
 
@@ -73,9 +73,20 @@ namespace Transonic.MIDI.System
 
         public void connectUnit(SystemUnit unit)
         {
-            unitList.Add(unit);
+            if (unit != null)
+            {
+                unitList.Add(unit);
+            }
         }
 
+        public void disconnectUnit(SystemUnit unit)
+        {
+            if (unit != null)
+            {
+                unitList.Remove(unit);
+            }
+        }
+        
 // midi funcs -----------------------------------------------------------------
 
         //open the input device and set its event handler to HandleMessage()

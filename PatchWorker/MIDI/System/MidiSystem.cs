@@ -99,17 +99,19 @@ namespace Transonic.MIDI.System
         public List<String> getInDevNameList()
         {
             List<String> nameList = new List<String>();
+            nameList.Add("no input");
             foreach (InputDevice indev in inputDevices) 
             {
                 nameList.Add(indev.devName);
-            }
-            if (nameList.Count == 0) nameList.Add("none");
+            }            
             return nameList;
         }
 
         public InputDevice findInputDevice(String inName)
         {
             InputDevice result = null;
+            if (inName.Equals("no input")) return result;
+
             foreach (InputDevice indev in inputDevices)
             {
                 if (indev.devName.Equals(inName)) {
@@ -123,17 +125,19 @@ namespace Transonic.MIDI.System
         public List<String> getOutDevNameList()
         {
             List<String> nameList = new List<String>();
+            nameList.Add("no output");
             foreach (OutputDevice outdev in outputDevices)
             {
                 nameList.Add(outdev.devName);
             }
-            if (nameList.Count == 0) nameList.Add("none");
             return nameList;
         }
 
         public OutputDevice findOutputDevice(String outName)
         {
             OutputDevice result = null;
+            if (outName.Equals("no input")) return result;
+
             foreach (OutputDevice outdev in outputDevices)
             {
                 if (outdev.devName.Equals(outName)) {

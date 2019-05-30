@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 2005-2017  George E Greaney
+Copyright (C) 1995-2019  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -33,8 +33,8 @@ namespace PatchWorker.Graph
     public class ModifierUnit : PatchUnit
     {
         //no special cons here
-        public ModifierUnit(PatchWorker _patchworker, String name, bool enabled)
-            : base(_patchworker, name, enabled)
+        public ModifierUnit(String name, bool enabled)
+            : base(name)
         {            
         }
 
