@@ -112,7 +112,7 @@
     <Compile Include="Patch\PatchCanvas.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Patch\PatchLine.cs" />
+    <Compile Include="Patch\PatchWire.cs" />
     <Compile Include="Patch\PatchPalette.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -132,7 +132,8 @@
     <Compile Include="Dialogs\InputUnitDialog.Designer.cs">
       <DependentUpon>InputUnitDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="Patch\iPatchConnector.cs" />
+    <Compile Include="Patch\IPatchConnector.cs" />
+    <Compile Include="UI\PatchUnitWire.cs" />
     <Compile Include="UI\ProgramPanel.cs" />
     <Compile Include="Widget\KeyboardBar.cs">
       <SubType>UserControl</SubType>

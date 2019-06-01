@@ -99,11 +99,18 @@ namespace Transonic.MIDI.System
         public List<String> getInDevNameList()
         {
             List<String> nameList = new List<String>();
-            nameList.Add("no input");
-            foreach (InputDevice indev in inputDevices) 
+            foreach (InputDevice indev in inputDevices)
             {
                 nameList.Add(indev.devName);
-            }            
+            }
+            return nameList;
+        }
+
+        public List<String> getInDevNameListNoInput()
+        {
+            List<String> nameList = new List<String>();
+            nameList.Add("no input");
+            nameList.AddRange(getInDevNameList());
             return nameList;
         }
 
@@ -125,11 +132,18 @@ namespace Transonic.MIDI.System
         public List<String> getOutDevNameList()
         {
             List<String> nameList = new List<String>();
-            nameList.Add("no output");
             foreach (OutputDevice outdev in outputDevices)
             {
                 nameList.Add(outdev.devName);
             }
+            return nameList;
+        }
+
+        public List<String> getOutDevNameListNoOutput()
+        {
+            List<String> nameList = new List<String>();
+            nameList.Add("no output");
+            nameList.AddRange(getOutDevNameList());
             return nameList;
         }
 

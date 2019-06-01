@@ -43,8 +43,8 @@ namespace PatchWorker
         public PatchCanvas canvas;
 
         //the back end
-        public PatchWork patchWork;             
-        public MidiSystem midiSystem;           
+        public PatchWork patchWork;
+        public MidiSystem midiSystem;
 
         public Settings settings;
 
@@ -58,6 +58,8 @@ namespace PatchWorker
         //cons
         public PatchWindow()
         {
+            patchWork = new PatchWork(this);
+
             //start up midi engine
             midiSystem = new MidiSystem();
 
@@ -89,12 +91,9 @@ namespace PatchWorker
             patchFilename = null;
             this.Text = "PatchWorker [new patch]";
 
-            patchWork = new PatchWork(this);
-
-            //wire control panel up
-            controlPanel.canvas = canvas;
-            controlPanel.patchWork = patchWork;
-            controlPanel.updateUnitList();
+            //wire the parts together
+            patchWork.canvas = canvas;
+            patchWork.updateUnitList();
         }
 
         protected override void OnResize(EventArgs e)
@@ -122,7 +121,6 @@ namespace PatchWorker
 
             settings.patchWndX = this.Location.X;
             settings.patchWndY = this.Location.Y;
-            //settings.patchWndHeight = this.Height;
             settings.patchWndWidth = this.Width;
             settings.patchFolder = patchFolder;
             settings.save();
@@ -215,8 +213,8 @@ namespace PatchWorker
                 if (unitdlg.DialogResult == DialogResult.OK)
                 {
                     InputUnit inUnit = new InputUnit(unitdlg.name, unitdlg.devName, unitdlg.chanNum);
-                    settings.addInputUnit(inUnit);
-                    controlPanel.updateUnitList();
+                    patchWork.addInputUnit(inUnit);
+                    patchWork.updateUnitList();
                 }
             }
             else
@@ -242,8 +240,8 @@ namespace PatchWorker
                 if (unitdlg.DialogResult == DialogResult.OK)
                 {
                     OutputUnit outUnit = new OutputUnit(unitdlg.name, unitdlg.devName, unitdlg.chanNum);
-                    settings.addOutputUnit(outUnit);
-                    controlPanel.updateUnitList();
+                    patchWork.addOutputUnit(outUnit);
+                    patchWork.updateUnitList();
                 }
             }
             else
@@ -305,8 +303,23 @@ namespace PatchWorker
 
         public PatchBox getPatchBox(PaletteItem item)
         {
-            PatchBox newBox = new PatchBox();
+            PatchUnit unit = (PatchUnit)item.tag;               //get patch unit obj from menu item
+            patchWork.addUnitToPatch(unit);                     //add patch unit to graph
+            PatchUnitBox newBox = new PatchUnitBox(unit);       //create new patch box from unit
             return newBox;
+        }
+
+        public PatchWire getPatchWire(PatchPanel source, PatchPanel dest)
+        {
+            //connect source & dest units in graph
+            PatchUnit srcUnit = ((PatchUnitBox)source.patchbox).unit;
+            int srcJack = source.jackNum;
+            PatchUnit destUnit = ((PatchUnitBox)dest.patchbox).unit;
+            int destJack = source.jackNum;
+            PatchCord patchCord = patchWork.addCordToPath(srcUnit, srcJack, destUnit, destJack);
+
+            PatchUnitWire newWire = new PatchUnitWire(source, dest, patchCord);    //create new patch wire from connection
+            return newWire;
         }
     }
 }
