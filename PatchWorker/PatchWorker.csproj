@@ -158,6 +158,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <EmbeddedResource Include="Dialogs\InputUnitDialog.resx">
       <DependentUpon>InputUnitDialog.cs</DependentUpon>
@@ -182,12 +183,21 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Icon1.ico" />
+    <Content Include="resources\new-input.png" />
+    <Content Include="resources\new-modifier.png" />
+    <Content Include="resources\new-output.png" />
+    <Content Include="resources\panic.png" />
+    <Content Include="resources\patch-new.png" />
+    <Content Include="resources\patch-open.png" />
+    <Content Include="resources\patch-save-as.png" />
+    <Content Include="resources\patch-save.png" />
+    <Content Include="resources\show-hide.png" />
+    <Content Include="show-hide.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName) == Release (
-  $(TargetDir)\release.bat
-)</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

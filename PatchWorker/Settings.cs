@@ -50,7 +50,7 @@ namespace PatchWorker
 
             EnamlData data = new EnamlData(CONFIGFILENAME);
 
-            string version = data.getStringValue("version", VERSION);
+            string version = data.getStringValue("patchworker-version", VERSION);
             patchWndX = data.getIntValue("global-settings.patch-window.x", 100);
             patchWndY = data.getIntValue("global-settings.patch-window.y", 100);
             patchWndWidth = data.getIntValue("global-settings.patch-window.width", 400);
@@ -64,7 +64,7 @@ namespace PatchWorker
         {
             EnamlData data = new EnamlData(CONFIGFILENAME);
 
-            data.setStringValue("version", VERSION);
+            data.setStringValue("patchworker-version", VERSION);
             data.setIntValue("global-settings.patch-window.x", patchWndX);
             data.setIntValue("global-settings.patch-window.y", patchWndY);
             data.setIntValue("global-settings.patch-window.width", patchWndWidth);
