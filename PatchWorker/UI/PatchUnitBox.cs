@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 2005-2018  George E Greaney
+Copyright (C) 1995-2019  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -29,80 +29,31 @@ using PatchWorker.Graph;
 
 namespace PatchWorker.UI
 {
-    class PatchUnitBox : PatchBox
+    public class PatchUnitBox : PatchBox
     {
-        public PatchUnit unit;
+        public PatchUnit unit;              //backing model unit
 
-        //cons for loading from XML, panels will be loaded by bases class from XML
-        public PatchUnitBox()
+        public PatchUnitBox(PatchUnit _unit)
             : base()
-        {
-            boxType = "PatchUnitBox";
-        }
-
-        public PatchUnitBox(PatchUnit _unit) : this()
         {
             unit = _unit;
             title = unit.name;
-            List<PatchPanel> panelList = unit.getPatchPanels(this);
+            List<PatchPanel> panelList = unit.getPatchPanels(this);         //model knows what panels to add to this patch box
             foreach (PatchPanel panel in panelList)
             {
-                addPanel(panel, false);
+                addPanel(panel);
             }
         }
 
-        //removing this box from the canvas, re-enable unit's entry in unit menu
-        public override void delete()
-        {
-            unit.menuItem.Enabled = true;
-        }
-
-//- settings methods -------------------------------------------------------------
+        //- settings methods -------------------------------------------------------------
 
         //called by canvas when user double clicks on title bar
         public override void onTitleDoubleClick()
         {
             unit.editSettings();
             title = unit.name;
-            unit.menuItem.Text = unit.name;
-            canvas.Invalidate();            
-        }
-
-//- persistance ---------------------------------------------------------------
-
-        public override void loadAttributesFromXML(XmlNode boxNode)
-        {
-            base.loadAttributesFromXML(boxNode);
-
-            //find unit box's unit from unit name
-            String unitName = boxNode.Attributes["unitname"].Value;
-            PatchWorker pw = PatchWorker.getPatchWorker();
-            unit = pw.findUnit(unitName);
-            if (unit != null)
-            {
-                pw.addUnitToPatch(unit);               //add patch unit to graph
-            }
-        }
-
-        public override void saveAttributesToXML(XmlWriter xmlWriter)
-        {
-            base.saveAttributesToXML(xmlWriter);
-            xmlWriter.WriteAttributeString("unitname", unit.name);
-        }
-    }
-
-//- unit box loader class --------------------------------------------------------
-
-    public class PatchUnitBoxLoader : PatchBoxLoader
-    {
-        public override PatchBox loadFromXML(XmlNode boxNode)
-        {
-            //create unit box & set attrs
-            PatchUnitBox box = new PatchUnitBox();
-            box.loadAttributesFromXML(boxNode);
-            if (box.unit == null)
-                return null;
-            return box;
+            unit.paletteItem.name = unit.name;
+            canvas.Invalidate();
         }
     }
 }

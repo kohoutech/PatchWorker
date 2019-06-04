@@ -32,61 +32,47 @@ namespace PatchWorker.UI
 {
     public class OutJackPanel : PatchPanel
     {
-        public Rectangle outJack;
+        public Point connectionPoint;
+        public Point[] jackShape;
 
-        readonly Pen JACKBORDER = Pens.Black;
+        const int PANELHEIGHT = 30;
         readonly Brush JACKCOLOR = new SolidBrush(Color.FromArgb(90, 50, 188));
-        readonly Brush JACKHOLE = Brushes.Black;
-        readonly int JACKSIZE = 20;
 
-        public OutJackPanel(PatchBox _box)
-            : base(_box)
+        public OutJackPanel(PatchBox box, String jackName)
+            : base(box, jackName)
         {
-            panelType = "OutJackPanel";
             connType = CONNECTIONTYPE.SOURCE;
-            frame = new Rectangle(0, 0, 100, 40);
-            outJack = new Rectangle(frame.Right - (15 + JACKSIZE), frame.Top + (JACKSIZE / 2), JACKSIZE, JACKSIZE);
+
+            updateFrame(patchbox.frame.Width, PANELHEIGHT);
+            connectionPoint = new Point(frame.Right, frame.Top + (frameHeight / 2));
+            updateJack();
         }
 
         public override void setPos(int xOfs, int yOfs)
         {
             base.setPos(xOfs, yOfs);
-            outJack.Offset(xOfs, yOfs);
+            connectionPoint.Offset(xOfs, yOfs);
+            updateJack();
+        }
+
+        private void updateJack()
+        {
+            jackShape = new Point[]{ new Point(connectionPoint.X, connectionPoint.Y), 
+                                     new Point(connectionPoint.X - 10, connectionPoint.Y + 10), 
+                                     new Point(connectionPoint.X - 10, connectionPoint.Y - 10) };
         }
 
 //- connections ---------------------------------------------------------------
 
         public override Point ConnectionPoint
         {
-            get { return new Point(outJack.Left + outJack.Width / 2, outJack.Top + outJack.Height / 2); }
-        }
-
-        public override iPatchConnector makeConnection(PatchPanel destPanel)
-        {
-            PatchUnitBox srcbox = (PatchUnitBox)patchbox;
-            PatchUnit source = srcbox.unit;
-            PatchUnitBox destbox = (PatchUnitBox)destPanel.patchbox;
-            PatchUnit dest = destbox.unit;
-            iPatchConnector patchCord = source.connectDest(dest);
-            return patchCord;
-        }
-
-        public override void breakConnection(PatchPanel destPanel)
-        {
-            if (destPanel != null)
-            {
-                PatchUnitBox srcbox = (PatchUnitBox)patchbox;
-                PatchUnit source = srcbox.unit;
-                PatchUnitBox destbox = (PatchUnitBox)destPanel.patchbox;
-                PatchUnit dest = destbox.unit;
-                source.disconnectDest(dest);
-            }
+            get { return connectionPoint; }
         }
 
         public override void onClick(Point pos)
         {            
+            //nothing yet
         }
-
 
 //- painting ------------------------------------------------------------------
 
@@ -94,37 +80,10 @@ namespace PatchWorker.UI
         {
             base.paint(g);
 
-            //jack
-            g.DrawEllipse(JACKBORDER, outJack);
-            g.FillEllipse(JACKCOLOR, outJack);
-            outJack.Inflate(-5, -5);
-            g.FillEllipse(JACKHOLE, outJack);
-            outJack.Inflate(5, 5);
-        }
-
-        public override void loadAttributesFromXML(XmlNode panelNode)
-        {
-            base.loadAttributesFromXML(panelNode);
-        }
-
-        public override void saveAttributesToXML(XmlWriter xmlWriter)
-        {
-            base.saveAttributesToXML(xmlWriter);
+            //out jack
+            g.FillPolygon(JACKCOLOR, jackShape);
         }
     }
-
-//- panel loader class --------------------------------------------------------
-
-    public class OutJackPanelLoader : PatchPanelLoader
-    {
-        public override PatchPanel loadFromXML(PatchBox box, XmlNode panelNode)
-        {
-            OutJackPanel panel = new OutJackPanel(box);
-            panel.loadAttributesFromXML(panelNode);
-            return panel;
-        }
-    }
-
 }
 
 //Console.WriteLine("there's no sun in the shadow of the wizard");

@@ -30,66 +30,47 @@ namespace PatchWorker.UI
 {
     public class InJackPanel : PatchPanel
     {
-        public Rectangle inJack;
+        public Point connectionPoint;
+        public Point[] jackShape;
 
-        readonly Pen JACKBORDER = Pens.Black;
+        const int PANELHEIGHT = 30;
         readonly Brush JACKCOLOR = new SolidBrush(Color.FromArgb(90, 50, 188));
-        readonly Brush JACKHOLE = Brushes.Black;
-        readonly int JACKSIZE = 20;
 
-        public InJackPanel(PatchBox _box)
-            : base(_box)
+        public InJackPanel(PatchBox box, String jackName)
+            : base(box, jackName)
         {
-            panelType = "InJackPanel";
             connType = CONNECTIONTYPE.DEST;
-            frame = new Rectangle(0, 0, 100, 40);
-            inJack = new Rectangle(frame.Left + 15, frame.Top + (JACKSIZE / 2), JACKSIZE, JACKSIZE);
+
+            updateFrame(patchbox.frame.Width, PANELHEIGHT);
+            connectionPoint = new Point(frame.Left, frame.Top + (frameHeight / 2));
+            updateJack();
         }
 
         public override void setPos(int xOfs, int yOfs)
         {
             base.setPos(xOfs, yOfs);
-            inJack.Offset(xOfs, yOfs);
+            connectionPoint.Offset(xOfs, yOfs);
+            updateJack();
+        }
+
+        private void updateJack()
+        {
+            jackShape = new Point[]{ new Point(connectionPoint.X, connectionPoint.Y), 
+                                     new Point(connectionPoint.X + 10, connectionPoint.Y + 10), 
+                                     new Point(connectionPoint.X + 10, connectionPoint.Y - 10) };
         }
 
         public override Point ConnectionPoint
         {
-            get {return new Point(inJack.Left + inJack.Width / 2, inJack.Top + inJack.Height / 2);}
+            get{ return connectionPoint;}
         }
 
         public override void paint(Graphics g)
         {
             base.paint(g);
 
-            //jack
-            g.DrawEllipse(JACKBORDER, inJack);
-            g.FillEllipse(JACKCOLOR, inJack);
-            inJack.Inflate(-5, -5);
-            g.FillEllipse(JACKHOLE, inJack);
-            inJack.Inflate(5, 5);
-        }
-
-        public override void loadAttributesFromXML(XmlNode panelNode)
-        {
-            base.loadAttributesFromXML(panelNode);
-        }
-
-        public override void saveAttributesToXML(XmlWriter xmlWriter)
-        {
-            base.saveAttributesToXML(xmlWriter);
-        }
-    }
-
-//- panel loader class --------------------------------------------------------
-
-    public class InJackPanelLoader : PatchPanelLoader
-    {
-        public override PatchPanel loadFromXML(PatchBox box, XmlNode panelNode)
-        {
-            InJackPanel panel = new InJackPanel(box);
-            panel.loadAttributesFromXML(panelNode);
-            return panel;
-
+            //in jack
+            g.FillPolygon(JACKCOLOR, jackShape);
         }
     }
 }
