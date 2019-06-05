@@ -51,11 +51,13 @@ namespace Transonic.Patch
             canvas = _canvas;
             this.Size = new Size(PALLETEWIDTH, 100);        //the width is constant, the height changes
             this.BackColor = PALETTECOLOR;
+            this.TabStop = false;                           //keep palette from stealing focus from canvas
 
             //ui
             btnOpen = new Button();
             btnOpen.FlatStyle = FlatStyle.System;
             btnOpen.Text = "<";
+            btnOpen.TabStop = false;
             btnOpen.Click += new System.EventHandler(btnOpen_Click);
             this.Controls.Add(btnOpen);
 
@@ -65,6 +67,7 @@ namespace Transonic.Patch
             scrollbar = new VScrollBar();
             scrollbar.Minimum = 0;
             scrollbar.Dock = DockStyle.Right;
+            scrollbar.TabStop = false;
             scrollbar.ValueChanged += new EventHandler(scrollbar_ValueChanged);
             this.Controls.Add(scrollbar);
 
@@ -77,6 +80,7 @@ namespace Transonic.Patch
             panelSpace.BackColor = PALETTECOLOR;
             panelSpace.Location = new Point(0, 0);
             panelSpace.Size = new Size(0, 0);
+            panelSpace.TabStop = false;
             this.Controls.Add(panelSpace);
 
             items = new List<PaletteItem>();        //empty palette list
@@ -99,6 +103,7 @@ namespace Transonic.Patch
             foreach (PaletteItem item in items)
             {
                 Label itemBox = new Label();
+                item.itembox = itemBox;
                 itemBox.Text = item.name;
                 itemBox.TextAlign = ContentAlignment.MiddleCenter;
                 itemBox.BorderStyle = BorderStyle.FixedSingle;
@@ -173,90 +178,25 @@ namespace Transonic.Patch
             scrollbar.Visible = isOpen;
             canvas.openPalette(isOpen);
         }
-
-        //public void addInputUnitToMenu(PatchUnit unit)
-        //{
-        //    ToolStripItem inputItem = new ToolStripMenuItem(unit.name);
-        //    inputItem.Click += new EventHandler(unitSelectMenuItem_Click);
-        //    inputItem.Tag = unit;
-        //    inputItem.Enabled = unit.enabled;
-        //    unit.setMenuItem(inputItem);
-
-        //    if (inputUnitMenuItems == 0)
-        //    {
-        //        unitMenuItem.DropDownItems.Add(new ToolStripSeparator());
-        //        inputUnitMenuItems++;
-        //    }
-        //    unitMenuItem.DropDownItems.Insert((3 + inputUnitMenuItems), inputItem);
-        //    inputUnitMenuItems++;
-        //}
-
-        //public void addOutputUnitToMenu(PatchUnit unit)
-        //{
-        //    ToolStripItem outputItem = new ToolStripMenuItem(unit.name);
-        //    outputItem.Click += new EventHandler(unitSelectMenuItem_Click);
-        //    outputItem.Tag = unit;
-        //    outputItem.Enabled = unit.enabled;
-        //    unit.setMenuItem(outputItem);
-
-        //    if (outputUnitMenuItems == 0)
-        //    {
-        //        unitMenuItem.DropDownItems.Add(new ToolStripSeparator());
-        //        outputUnitMenuItems++;
-        //    }
-        //    unitMenuItem.DropDownItems.Insert((3 + inputUnitMenuItems + outputUnitMenuItems), outputItem);
-        //    outputUnitMenuItems++;
-        //}
-
-        ////handler for all unit menu items
-        //private void unitSelectMenuItem_Click(object sender, EventArgs e)
-        //{
-        //    ToolStripItem item = (ToolStripItem)sender;
-        //    PatchUnit unit = (PatchUnit)item.Tag;                      //get patch unit obj from menu item
-
-        //    addUnitToPatch(unit);               //add patch unit to graph
-        //    PatchUnitBox box = new PatchUnitBox(unit);      //create new patch box from unit
-        //    canvas.addPatchBox(box);                        //and add it to canvas
-        //}
-
-        //- units ---------------------------------------------------------------------
-
-        //public PatchUnit findUnit(String unitName)
-        //{
-        //    PatchUnit result = null;
-        //    //foreach (PatchUnit unit in allUnitList)
-        //    //{
-        //    //    if (unit.name.Equals(unitName))
-        //    //    {
-        //    //        result = unit;
-        //    //        break;
-        //    //    }
-        //    //}
-        //    return result;
-        //}
-
-        ////add new unit to unit list & start it up
-        //public void addUnitToPatch(PatchUnit unit)
-        //{
-        //    //patchUnits.Add(unit);
-        //    //if (unit is InputUnit || unit is OutputUnit)             //input & output units can only be added once
-        //    //{
-        //    //    unit.menuItem.Enabled = false;                       //so we disable menu item while unit is in graph
-        //    //}
-
-        //    //unit.start();
-        //}
-
-        ////connections should already have been removed when this is called
-        //public void removeUnitFromPatch(PatchUnit unit)
-        //{
-        //    //patchUnits.Remove(unit);            //remove the unit from the patch graph
-        //    //unit.menuItem.Enabled = true;       //re-enable menu items for input and output units            
-        //}
-
     }
 
     //-------------------------------------------------------------------------
+
+    public class PaletteItem
+    {
+        public String name;
+        public bool enabled;
+        public Label itembox;
+        public object tag;
+
+        public PaletteItem(String _name)
+        {
+            name = _name;
+            enabled = true;
+            itembox = null;
+            tag = null;
+        }
+    }
 
     //for future organization
     public class PaletteGroup
@@ -273,22 +213,6 @@ namespace Transonic.Patch
         public void addItem(PaletteItem item)
         {
             items.Add(item);
-        }
-    }
-
-    public class PaletteItem
-    {
-        public String name;
-        public bool enabled;
-        public Label itembox;
-        public object tag;
-
-        public PaletteItem(String _name)
-        {
-            name = _name;
-            enabled = true;
-            itembox = null;
-            tag = null;
         }
     }
 }
