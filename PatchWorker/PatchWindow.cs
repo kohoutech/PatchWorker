@@ -33,11 +33,15 @@ using PatchWorker.Graph;
 using PatchWorker.Dialogs;
 using Transonic.Patch;
 using Transonic.MIDI.System;
+using Origami.ENAML;
 
 namespace PatchWorker
 {
-    public partial class PatchWindow : Form, IPatchView
+    public partial class PatchWindow : Form
     {
+        readonly Color CANVASCOLOR = Color.FromArgb(255, 130, 0);       //UT Orange!
+        readonly Color PALETTECOLOR = Color.FromArgb(255, 165, 0);
+
         //the front end
         public ControlPanel controlPanel;
         public PatchCanvas canvas;
@@ -54,6 +58,8 @@ namespace PatchWorker
         bool canvasHidden;
         public int curCanvasHeight;
         public int minHeight;
+
+        public bool hasChanged;
 
         //cons
         public PatchWindow()
@@ -74,8 +80,9 @@ namespace PatchWorker
             this.Controls.Add(controlPanel);
 
             //patch canvas fills up entire client area between control panel & status bar
-            canvas = new PatchCanvas(this);
-            canvas.BackColor = Color.FromArgb(255, 140, 0);
+            canvas = new PatchCanvas(patchWork);
+            canvas.BackColor = CANVASCOLOR;
+            canvas.setPaletteColor(PALETTECOLOR);
             canvas.Location = new Point(this.ClientRectangle.Left, controlPanel.Bottom);
             canvas.Size = new Size(controlPanel.Width, PatchStatus.Top - controlPanel.Bottom);
             this.Controls.Add(canvas);
@@ -90,6 +97,7 @@ namespace PatchWorker
             patchFolder = settings.patchFolder;
             patchFilename = null;
             this.Text = "PatchWorker [new patch]";
+            hasChanged = false;
 
             //wire the parts together
             patchWork.canvas = canvas;
@@ -114,6 +122,15 @@ namespace PatchWorker
             }
         }
 
+        public void patchHasChanged()
+        {
+            if (!hasChanged)
+            {
+                this.Text = this.Text + " *";
+            }
+            hasChanged = true;
+        }
+
         //save settings & clean up on shut down
         private void PatchWindow_FormClosed(object sender, FormClosedEventArgs e)
         {
@@ -122,7 +139,7 @@ namespace PatchWorker
             settings.patchWndX = this.Location.X;
             settings.patchWndY = this.Location.Y;
             settings.patchWndWidth = this.Width;
-            settings.patchFolder = patchFolder;
+            settings.patchFolder = (patchFolder != null) ? patchFolder : Application.StartupPath;
             settings.save();
         }
 
@@ -133,26 +150,34 @@ namespace PatchWorker
             canvas.clearPatch();
             patchFilename = null;
             this.Text = "PatchWorker [new patch]";
+            hasChanged = false;
         }
 
         public void loadPatch()
         {
+#if (DEBUG)
+            String filename = "patch2.pwp";
+#else
+
             openPatchDialog.InitialDirectory = patchFolder;
             openPatchDialog.DefaultExt = "*.pwp";
             openPatchDialog.Filter = "patch files|*.pwp|All files|*.*";
             openPatchDialog.ShowDialog();
             String filename = openPatchDialog.FileName;
+#endif
             if (filename.Length > 0)
             {
                 patchFilename = filename;
-                patchWork.loadPatch(patchFilename);
+                canvas.loadPatch(patchFilename);
                 this.Text = "PatchWorker [" + patchFilename + "]";
-                patchFolder = Path.GetDirectoryName(filename);
+                hasChanged = false;
+                patchFolder = Path.GetDirectoryName(Path.GetFullPath(filename));
             }
         }
 
         public void savePatch(bool newName)
         {
+            bool renamed = false;
             if (newName || patchFilename == null)
             {
                 String filename = "";
@@ -168,12 +193,17 @@ namespace PatchWorker
                     filename = filename + ".pwp";
 
                 patchFilename = filename;
-                patchFolder = Path.GetDirectoryName(patchFilename);
+                patchFolder = Path.GetDirectoryName(Path.GetFullPath(patchFilename));
+                renamed = true;
             }
-            patchWork.savePatch(patchFilename);
-            String msg = "Current patch has been saved as\n " + patchFilename;
-            MessageBox.Show(msg, "Saved");
+            canvas.savePatch(patchFilename);
             this.Text = "PatchWorker [" + patchFilename + "]";
+            hasChanged = false;
+            if (renamed)
+            {
+                String msg = "Current patch has been saved as\n " + Path.GetFileName(patchFilename);
+                MessageBox.Show(msg, "Saved");
+            }
         }
 
         private void patchNewMenuItem_Click(object sender, EventArgs e)
@@ -239,7 +269,7 @@ namespace PatchWorker
                 unitdlg.ShowDialog();
                 if (unitdlg.DialogResult == DialogResult.OK)
                 {
-                    OutputUnit outUnit = new OutputUnit(unitdlg.name, unitdlg.devName, unitdlg.chanNum);
+                    OutputUnit outUnit = new OutputUnit(unitdlg.name, unitdlg.devName, unitdlg.chanNum, unitdlg.progCount);
                     patchWork.addOutputUnit(outUnit);
                     patchWork.updateUnitList();
                 }
@@ -290,6 +320,13 @@ namespace PatchWorker
             hideCanvas();
         }
 
+        //- midi menu ----------------------------------------------------------------
+
+        private void allNotesOffMidiMenuItem_Click(object sender, EventArgs e)
+        {
+            patchWork.sendMidiPanicMessage();
+        }
+
         //- help menu ----------------------------------------------------------------
 
         private void helpAboutMenuItem_Click(object sender, EventArgs e)
@@ -297,29 +334,6 @@ namespace PatchWorker
             String msg = "Patchworker\nversion " + Settings.VERSION + "\n\xA9 Transonic Software 1995-2019\n" +
                 "http://transonic.kohoutech.com";
             MessageBox.Show(msg, "About");
-        }
-
-        //- IPatchView interface ----------------------------------------------
-
-        public PatchBox getPatchBox(PaletteItem item)
-        {
-            PatchUnit unit = (PatchUnit)item.tag;               //get patch unit obj from menu item
-            patchWork.addUnitToPatch(unit);                     //add patch unit to graph
-            PatchUnitBox newBox = new PatchUnitBox(unit);       //create new patch box from unit
-            return newBox;
-        }
-
-        public PatchWire getPatchWire(PatchPanel source, PatchPanel dest)
-        {
-            //connect source & dest units in graph
-            PatchUnit srcUnit = ((PatchUnitBox)source.patchbox).unit;
-            int srcJack = source.jackNum;
-            PatchUnit destUnit = ((PatchUnitBox)dest.patchbox).unit;
-            int destJack = source.jackNum;
-            PatchCord patchCord = patchWork.addCordToPath(srcUnit, srcJack, destUnit, destJack);
-
-            PatchUnitWire newWire = new PatchUnitWire(source, dest, patchCord);    //create new patch wire from connection
-            return newWire;
         }
     }
 }

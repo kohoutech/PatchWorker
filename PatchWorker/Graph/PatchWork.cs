@@ -29,17 +29,19 @@ using Origami.ENAML;
 
 namespace PatchWorker.Graph
 {
-    public class PatchWork
+    public class PatchWork : IPatchModel
     {
-        private PatchWindow patchWnd;
+        public PatchWindow patchWnd;
         public PatchCanvas canvas;
 
         //unit lists
         public List<InputUnit> inputUnitList;
         public List<ModifierUnit> modifierUnitList;
         public List<OutputUnit> outputUnitList;
+        Dictionary<String, PatchUnit> allUnitNames;     //for looking up a unit by its name
 
         public List<PatchUnit> patchUnits;              //units that have been added to the patch graph
+
 
         public PatchWork(PatchWindow _patchWindow)
         {
@@ -50,27 +52,43 @@ namespace PatchWorker.Graph
             inputUnitList = new List<InputUnit>();
             modifierUnitList = new List<ModifierUnit>();
             outputUnitList = new List<OutputUnit>();
+            allUnitNames = new Dictionary<string, PatchUnit>();
+
+            //for testing purposes, adding modifier here, for now
+            modifierUnitList.Add(new PowerChord("Power Chord"));
 
             //patch graph empty
             patchUnits = new List<PatchUnit>();
-
-            //registerLoaders();
         }
 
-        //- units  ------------------------------------------------------------
+        //- adding units  -----------------------------------------------------
 
         public void addInputUnit(InputUnit inUnit)
         {
+            inUnit.patchWork = this;
             inUnit.inputDev = patchWnd.midiSystem.findInputDevice(inUnit.indevName);
             inUnit.enabled = (inUnit.inputDev == null);
             inputUnitList.Add(inUnit);
+            allUnitNames.Add(inUnit.name, inUnit);
         }
 
         public void addOutputUnit(OutputUnit outUnit)
         {
+            outUnit.patchWork = this;
             outUnit.outDev = patchWnd.midiSystem.findOutputDevice(outUnit.outDevName);
             outUnit.enabled = (outUnit.inputDev == null);
             outputUnitList.Add(outUnit);
+            allUnitNames.Add(outUnit.name, outUnit);
+        }
+
+        public PatchUnit getUnit(String unitName)
+        {
+            PatchUnit result = null;
+            if (allUnitNames.ContainsKey(unitName))
+            {
+                result = allUnitNames[unitName];
+            }
+            return result;
         }
 
         //wrap patch units in palette items so they can be displayed in canvas' palette
@@ -83,6 +101,15 @@ namespace PatchWorker.Graph
                 item.tag = inUnit;
                 item.enabled = inUnit.enabled;
                 inUnit.paletteItem = item;
+                items.Add(item);
+            }
+
+            foreach (ModifierUnit modUnit in modifierUnitList)
+            {
+                PaletteItem item = new PaletteItem(modUnit.name);
+                item.tag = modUnit;
+                item.enabled = true;            //modifier units are always enabled
+                modUnit.paletteItem = item;
                 items.Add(item);
             }
 
@@ -103,12 +130,13 @@ namespace PatchWorker.Graph
             int disabledcount = 0;
             String disabledList = "";
 
-            List<String> inputlist = data.getSubpathKeys("input-units");
+            List<String> inputlist = data.getPathKeys("input-units");
             foreach (String inputName in inputlist)
             {
                 InputUnit inUnit = InputUnit.loadFromConfig(data, "input-units." + inputName);
+                inUnit.patchWork = this;
                 inUnit.inputDev = patchWnd.midiSystem.findInputDevice(inUnit.indevName);
-#if (RELEASE)
+#if (!DEBUG)
                 if (inUnit.inputDev == null)
                 {
                     inUnit.enabled = false;
@@ -117,14 +145,16 @@ namespace PatchWorker.Graph
                 }
 #endif
                 inputUnitList.Add(inUnit);
+                allUnitNames.Add(inUnit.name, inUnit);
             }
 
-            List<String> outputlist = data.getSubpathKeys("output-units");
+            List<String> outputlist = data.getPathKeys("output-units");
             foreach (String outputName in outputlist)
             {
                 OutputUnit outUnit = OutputUnit.loadFromConfig(data, "output-units." + outputName);
+                outUnit.patchWork = this;
                 outUnit.outDev = patchWnd.midiSystem.findOutputDevice(outUnit.outDevName);
-#if (RELEASE)
+#if (!DEBUG)
                 if (outUnit.outDev == null)
                 {
                     outUnit.enabled = false;
@@ -133,6 +163,7 @@ namespace PatchWorker.Graph
                 }
 #endif
                 outputUnitList.Add(outUnit);
+                allUnitNames.Add(outUnit.name, outUnit);
             }
 
             //notify user of any disabled units
@@ -164,215 +195,164 @@ namespace PatchWorker.Graph
             }
         }
 
-        //- patches + units ---------------------------------------------------
+        //- patch management --------------------------------------------------
 
-
-
-        //public PatchUnit findUnit(String unitName)
-        //{
-        //    PatchUnit result = null;
-        //    //foreach (PatchUnit unit in allUnitList)
-        //    //{
-        //    //    if (unit.name.Equals(unitName))
-        //    //    {
-        //    //        result = unit;
-        //    //        break;
-        //    //    }
-        //    //}
-        //    return result;
-        //}
-
-        public void addUnitToPatch(PatchUnit unit)
+        //add new input/output unit to unit list & start it up
+        public void addIOUnitToPatch(PatchUnit unit)
         {
-            //throw new NotImplementedException();
+            patchUnits.Add(unit);
+            canvas.disablePaletteItem(unit.paletteItem);    //so we disable menu item while unit is in graph
+            unit.start();
         }
 
-        ////add new unit to unit list & start it up
-        //public void addUnitToPatch(PatchUnit unit)
-        //{
-        //    //patchUnits.Add(unit);
-        //    //if (unit is InputUnit || unit is OutputUnit)             //input & output units can only be added once
-        //    //{
-        //    //    unit.menuItem.Enabled = false;                       //so we disable menu item while unit is in graph
-        //    //}
-
-        //    //unit.start();
-        //}
-
-        ////connections should already have been removed when this is called
-        //public void removeUnitFromPatch(PatchUnit unit)
-        //{
-        //    //patchUnits.Remove(unit);            //remove the unit from the patch graph
-        //    //unit.menuItem.Enabled = true;       //re-enable menu items for input and output units            
-        //}
-
-        //public void loadPatchBox(XmlNode boxNode)
-        //{
-        //    PatchBox box = PatchBox.loadFromXML(boxNode);
-        //    if (box != null)
-        //    {
-        //        box.canvas = this;
-        //        boxList.Add(box);
-        //    }
-        //}
-
-        //public void loadPatchWire(XmlNode lineNode)
-        //{
-        //    PatchLine line = PatchLine.loadFromXML(this, lineNode);
-        //    if (line != null)
-        //    {
-        //        lineList.Add(line);
-        //    }
-        //}
-
-        public PatchCord addCordToPath(PatchUnit srcUnit, int srcJack, PatchUnit destUnit, int destJack)
+        //handle modifier units differently
+        public PatchUnit addModiferToPatch(PatchUnit unit)
         {
-            return null;
+            ModifierUnit modUnit = ((ModifierUnit)unit).copyUnit();
+            modUnit.patchWork = this;
+
+            patchUnits.Add(modUnit);
+            return modUnit;
         }
 
-        //- patches -----------------------------------------------------------
-
-        public void loadPatch(string patchFilename)
+        //connections should already have been removed when this is called
+        public void removeUnitFromPatch(PatchUnit unit)
         {
-            
+            patchUnits.Remove(unit);                            //remove the unit from the patch graph
+            if (unit is InputUnit || unit is OutputUnit)
+            {
+                canvas.enablePaletteItem(unit.paletteItem);     //re-enable menu items for input and output units            
+            }
+            unit.stop();
         }
 
-        public void savePatch(string patchFilename)
+        public PatchCord addCordToPatch(PatchUnit srcUnit, String srcJack, PatchUnit destUnit, String destJack)
         {
-            
+            return srcUnit.connectDest(destUnit);
         }
 
-        //public void loadPatch(String patchFileName)
-        //{
-        //    clearPatch();       //start with a clean slate
+        public void removeCordFromPatch(PatchCord cord)
+        {
+            PatchUnit source = cord.srcUnit;
+            source.disconnectCord(cord);
+        }
 
-        //    XmlDocument xmlDoc = new XmlDocument();
-        //    xmlDoc.Load(patchFileName);
+        public void sendMidiPanicMessage()
+        {
+            foreach (PatchUnit unit in patchUnits)
+            {
+                if (unit is OutputUnit)
+                {
+                    OutputUnit outunit = (OutputUnit)unit;
 
-        //    foreach (XmlNode patchNode in xmlDoc.DocumentElement.ChildNodes)
-        //    {
-        //        if (patchNode.Name.Equals("boxes"))
-        //        {
-        //            foreach (XmlNode boxNode in patchNode.ChildNodes)
-        //            {
-        //                loadPatchBox(boxNode);
-        //            }
-        //        }
-        //        if (patchNode.Name.Equals("connections"))
-        //        {
-        //            foreach (XmlNode lineNode in patchNode.ChildNodes)
-        //            {
-        //                loadPatchLine(lineNode);
-        //            }
-        //        }
-        //    }
+                    outunit.sendAllNotesOff();
+                }
+            }
+        }
 
-        //    //renumber boxes
-        //    int boxNum = 0;
-        //    foreach (PatchBox box in boxList)
-        //    {
-        //        box.boxNum = ++boxNum;
-        //        box.RenumberPanels();
-        //    }
-        //    PatchBox.boxCount = boxNum;
+        //- IPatchModel interface ----------------------------------------------
 
-        //    Invalidate();
-        //}
+        public PatchBox getPatchBox(PaletteItem item)
+        {
+            PatchUnit unit = (PatchUnit)item.tag;               //get patch unit obj from menu item
+            if (unit is ModifierUnit)
+            {
+                unit = addModiferToPatch(unit);                 //add new modifier unit to graph
+            }
+            else
+            {
+                addIOUnitToPatch(unit);                         //add input/output unit to graph
+            }
+            PatchUnitBox newBox = new PatchUnitBox(unit);       //create new patch box from unit
+            return newBox;
+        }
 
-        //public void savePatch(String patchFileName)
-        //{
-        //    var settings = new XmlWriterSettings();
-        //    settings.OmitXmlDeclaration = true;
-        //    settings.Indent = true;
-        //    settings.NewLineOnAttributes = true;
+        public void removePatchBox(PatchBox box)
+        {
+            removeUnitFromPatch(((PatchUnitBox)box).unit);
+        }
 
-        //    XmlWriter xmlWriter = XmlWriter.Create(patchFileName, settings);
+        public PatchWire getPatchWire(PatchPanel source, PatchPanel dest)
+        {
+            //connect source & dest units in graph
+            PatchUnit srcUnit = ((PatchUnitBox)source.patchbox).unit;
+            String srcJack = source.panelName;
+            PatchUnit destUnit = ((PatchUnitBox)dest.patchbox).unit;
+            String destJack = source.panelName;
+            PatchCord patchCord = addCordToPatch(srcUnit, srcJack, destUnit, destJack);
 
-        //    xmlWriter.WriteStartDocument();
-        //    xmlWriter.WriteStartElement("patchworkerpatch");
-        //    xmlWriter.WriteAttributeString("version", "1.1.0");
+            PatchUnitWire newWire = new PatchUnitWire(source, dest, patchCord);    //create new patch wire from connection
+            return newWire;
+        }
 
-        //    xmlWriter.WriteStartElement("boxes");
-        //    foreach (PatchBox box in boxList)
-        //    {
-        //        box.saveToXML(xmlWriter);
-        //    }
-        //    xmlWriter.WriteEndElement();
+        public void removePatchWire(PatchWire wire)
+        {
+            removeCordFromPatch(((PatchUnitWire)wire).patchCord);
+        }
 
-        //    xmlWriter.WriteStartElement("connections");
-        //    foreach (PatchLine line in lineList)
-        //    {
-        //        line.saveToXML(xmlWriter);
-        //    }
-        //    xmlWriter.WriteEndElement();
+        public void loadPatchData(EnamlData data)
+        {
+            string version = data.getStringValue("patchworker-version", Settings.VERSION);
+        }
 
-        //    xmlWriter.WriteEndDocument();
-        //    xmlWriter.Close();
-        //}
+        public PatchBox loadPatchBox(EnamlData data, String boxPath)
+        {
+            String name = data.getStringValue(boxPath + ".name", "");
+            PatchUnit unit = getUnit(name);                             //get patch unit obj from patch file name
+            if (unit is ModifierUnit)
+            {
+                unit = addModiferToPatch(unit);                         //add new modifier unit to graph
+            }
+            else
+            {
+                addIOUnitToPatch(unit);                                 //add input/output unit to graph
+            }
+            PatchUnitBox newBox = new PatchUnitBox(unit);               //create new patch box from unit
 
-        //public void registerLoaders()
-        //{
-        //    PatchBox.registerBoxType("PatchUnitBox", new PatchUnitBoxLoader());
-        //    PatchPanel.registerPanelType("InJackPanel", new InJackPanelLoader());
-        //    PatchPanel.registerPanelType("OutJackPanel", new OutJackPanelLoader());
-        //    PatchPanel.registerPanelType("ProgramPanel", new ProgramPanelLoader());
-        //}
+            if (unit is OutputUnit || unit is ModifierUnit)
+            {
+                int progNum = data.getIntValue(boxPath + ".program", 0);
+                ProgramPanel progPanel = (ProgramPanel)newBox.getPanel("programmer");
+                progPanel.setProgram(progNum);
+            }
 
-        //- persistance ---------------------------------------------------------------
+            return newBox;
+        }
 
-        //get source & dest box nums from XML file and get the matching boxes from the canvas
-        //then get the panel nums from XML and get the matching panels from the boxes
-        //having the source & dest panels. create a new line between them
-        //this will create a connection in the backing model, call loadFromXML() on it with XML node to set its properties
-        //public static PatchWire loadFromXML(PatchCanvas canvas, XmlNode lineNode)
-        //{
-        //    PatchWire line = null;
-        //    try
-        //    {
-        //        int srcBoxNum = Convert.ToInt32(lineNode.Attributes["sourcebox"].Value);
-        //        int srcPanelNum = Convert.ToInt32(lineNode.Attributes["sourcepanel"].Value);
-        //        int destBoxNum = Convert.ToInt32(lineNode.Attributes["destbox"].Value);
-        //        int destPanelNum = Convert.ToInt32(lineNode.Attributes["destpanel"].Value);
+        //does the same thing as <getPatchWire> for now so <data> and <path> are unused
+        //could load additional data from the patch file if the model should expand
+        public PatchWire loadPatchWire(EnamlData data, String path, PatchPanel source, PatchPanel dest)
+        {
+            PatchWire newWire = getPatchWire(source, dest);
+            return newWire;
+        }
 
-        //        PatchBox sourceBox = canvas.findPatchBox(srcBoxNum);
-        //        PatchBox destBox = canvas.findPatchBox(destBoxNum);
-        //        if (sourceBox != null && destBox != null)
-        //        {
-        //            PatchPanel sourcePanel = sourceBox.findPatchPanel(srcPanelNum);
-        //            PatchPanel destPanel = destBox.findPatchPanel(destPanelNum);
+        public void savePatchData(EnamlData data)
+        {
+            data.setStringValue("patchworker-version", Settings.VERSION);
+        }
 
-        //            if (sourcePanel != null && destPanel != null)
-        //            {
-        //                line = new PatchWire(canvas, sourcePanel, destPanel);
-        //            }
-        //        }
+        public void savePatchBox(EnamlData data, string path, PatchBox box)
+        {
+            PatchUnitBox unitBox = (PatchUnitBox)box;
+            PatchUnit unit = unitBox.unit;
+            data.setStringValue(path + ".name", unit.name);
 
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        throw new PatchLoadException();
-        //    }
+            if (unit is OutputUnit || unit is ModifierUnit)
+            {
+                ProgramPanel progPanel = (ProgramPanel)unitBox.getPanel("programmer");
+                data.setIntValue(path + ".program", progPanel.progNum);
+            }
+        }
 
-        //    return line;
-        //}
+        //doesn't store any additional data for now
+        public void savePatchWire(EnamlData data, string path, PatchWire wire)
+        {
+        }
 
-        //public void saveToXML(XmlWriter xmlWriter)
-        //{
-        //    //save patch line attributes
-        //    xmlWriter.WriteStartElement("connection");
-        //    xmlWriter.WriteAttributeString("sourcebox", srcPanel.patchbox.boxNum.ToString());
-        //    xmlWriter.WriteAttributeString("sourcepanel", srcPanel.panelNum.ToString());
-        //    xmlWriter.WriteAttributeString("destbox", destPanel.patchbox.boxNum.ToString());
-        //    xmlWriter.WriteAttributeString("destpanel", destPanel.panelNum.ToString());
-
-        //    xmlWriter.WriteEndElement();
-        //}
-
+        public void patchHasChanged()
+        {
+            patchWnd.patchHasChanged();
+        }
     }
-
-    public class PatchLoadException : Exception
-    {
-    }
-
-
 }
