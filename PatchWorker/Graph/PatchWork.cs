@@ -36,13 +36,14 @@ namespace PatchWorker.Graph
 
         //unit lists
         public List<InputUnit> inputUnitList;
-        public List<ModifierUnit> modifierUnitList;
+        public List<ModifierFactory> modifierFactoryList;
         public List<OutputUnit> outputUnitList;
-        Dictionary<String, PatchUnit> allUnitNames;     //for looking up a unit by its name
+
+        Dictionary<String, PatchUnit> IOUnitNames;     //for looking up a input/output unit by its name
+        Dictionary<String, ModifierFactory> ModFactNames;
 
         public List<PatchUnit> patchUnits;              //units that have been added to the patch graph
-
-
+        
         public PatchWork(PatchWindow _patchWindow)
         {
             patchWnd = _patchWindow;
@@ -50,12 +51,10 @@ namespace PatchWorker.Graph
 
             //init unit lists
             inputUnitList = new List<InputUnit>();
-            modifierUnitList = new List<ModifierUnit>();
+            modifierFactoryList = new List<ModifierFactory>();
             outputUnitList = new List<OutputUnit>();
-            allUnitNames = new Dictionary<string, PatchUnit>();
-
-            //for testing purposes, adding modifier here, for now
-            modifierUnitList.Add(new PowerChord("Power Chord"));
+            IOUnitNames = new Dictionary<string, PatchUnit>();
+            ModFactNames = new Dictionary<string, ModifierFactory>();
 
             //patch graph empty
             patchUnits = new List<PatchUnit>();
@@ -69,7 +68,14 @@ namespace PatchWorker.Graph
             inUnit.inputDev = patchWnd.midiSystem.findInputDevice(inUnit.indevName);
             inUnit.enabled = (inUnit.inputDev == null);
             inputUnitList.Add(inUnit);
-            allUnitNames.Add(inUnit.name, inUnit);
+            IOUnitNames.Add(inUnit.name, inUnit);
+        }
+
+        public void addModiferFactory(ModifierFactory modFact)
+        {
+            modFact.patchWork = this;
+            modifierFactoryList.Add(modFact);
+            ModFactNames.Add(modFact.plugName, modFact);
         }
 
         public void addOutputUnit(OutputUnit outUnit)
@@ -78,15 +84,27 @@ namespace PatchWorker.Graph
             outUnit.outDev = patchWnd.midiSystem.findOutputDevice(outUnit.outDevName);
             outUnit.enabled = (outUnit.inputDev == null);
             outputUnitList.Add(outUnit);
-            allUnitNames.Add(outUnit.name, outUnit);
+            IOUnitNames.Add(outUnit.name, outUnit);
         }
 
+        //this finds a unit from the unit's name read from a patch file
         public PatchUnit getUnit(String unitName)
         {
             PatchUnit result = null;
-            if (allUnitNames.ContainsKey(unitName))
+            if (IOUnitNames.ContainsKey(unitName))
             {
-                result = allUnitNames[unitName];
+                result = IOUnitNames[unitName];
+            }
+            return result;
+        }
+
+        //and this does the same for modifier factories
+        private ModifierFactory getModFactory(string factName)
+        {
+            ModifierFactory result = null;
+            if (ModFactNames.ContainsKey(factName))
+            {
+                result = ModFactNames[factName];
             }
             return result;
         }
@@ -104,12 +122,11 @@ namespace PatchWorker.Graph
                 items.Add(item);
             }
 
-            foreach (ModifierUnit modUnit in modifierUnitList)
+            foreach (ModifierFactory modFact in modifierFactoryList)
             {
-                PaletteItem item = new PaletteItem(modUnit.name);
-                item.tag = modUnit;
-                item.enabled = true;            //modifier units are always enabled
-                modUnit.paletteItem = item;
+                PaletteItem item = new PaletteItem(modFact.plugName);
+                item.tag = modFact;
+                item.enabled = modFact.enabled;
                 items.Add(item);
             }
 
@@ -128,8 +145,10 @@ namespace PatchWorker.Graph
         public void loadUnits(EnamlData data)
         {
             int disabledcount = 0;
-            String disabledList = "";
+            String disabledUnits = "";
+            String disabledPlugins = "";
 
+            //input units
             List<String> inputlist = data.getPathKeys("input-units");
             foreach (String inputName in inputlist)
             {
@@ -141,13 +160,31 @@ namespace PatchWorker.Graph
                 {
                     inUnit.enabled = false;
                     disabledcount++;
-                    disabledList = disabledList + inUnit.name + "\n";
+                    disabledUnits = disabledUnits + inUnit.name + "\n";
                 }
 #endif
                 inputUnitList.Add(inUnit);
-                allUnitNames.Add(inUnit.name, inUnit);
+                IOUnitNames.Add(inUnit.name, inUnit);
             }
 
+            //modifier units
+            List<String> modlist = data.getPathKeys("modifier-units");
+            foreach (String modName in modlist)
+            {
+                ModifierFactory modFact = ModifierFactory.loadFromConfig(data, "modifier-units." + modName);
+                modFact.patchWork = this;
+#if (!DEBUG)
+                if (!modFact.enabled)
+                {
+                    disabledcount++;
+                    disabledPlugins = disabledPlugins + modFact.plugName + "\n";
+                }
+#endif
+                modifierFactoryList.Add(modFact);
+                ModFactNames.Add(modFact.plugName, modFact);
+            }
+
+            //output units
             List<String> outputlist = data.getPathKeys("output-units");
             foreach (String outputName in outputlist)
             {
@@ -159,19 +196,27 @@ namespace PatchWorker.Graph
                 {
                     outUnit.enabled = false;
                     disabledcount++;
-                    disabledList = disabledList + outUnit.name + "\n";
+                    disabledUnits = disabledUnits + outUnit.name + "\n";
                 }
 #endif
                 outputUnitList.Add(outUnit);
-                allUnitNames.Add(outUnit.name, outUnit);
+                IOUnitNames.Add(outUnit.name, outUnit);
             }
 
-            //notify user of any disabled units
+            //notify user of any disabled units or plugins
             if (disabledcount > 0)
             {
-                String msg = "Couldn't load these units:\n" + disabledList +
-               "to enable them, reconnect them and restart Patchworker\n" +
-               "If you have removed them from your system, delete them from the menu";
+                String msg = "";
+                if (disabledUnits.Length > 0)
+                {
+                    msg += ("Couldn't load these units:\n" + disabledUnits);
+                }
+                if (disabledPlugins.Length > 0)
+                {
+                    msg += ("Couldn't load these modifiers:\n" + disabledPlugins);
+                }
+                msg += "to enable units, reconnect them and restart Patchworker\n" +
+                       "If you have removed them from your system, delete them from the menu";
                 MessageBox.Show(msg, "Warning");
             }
         }
@@ -187,6 +232,14 @@ namespace PatchWorker.Graph
             }
 
             count = 1;
+            foreach (ModifierFactory modFact in modifierFactoryList)
+            {
+                String path = "modifier-units.unit-" + count.ToString().PadLeft(3, '0');
+                modFact.saveToConfig(data, path);
+                count++;
+            }
+
+            count = 1;
             foreach (OutputUnit outunit in outputUnitList)
             {
                 String path = "output-units.unit-" + count.ToString().PadLeft(3, '0');
@@ -197,22 +250,15 @@ namespace PatchWorker.Graph
 
         //- patch management --------------------------------------------------
 
-        //add new input/output unit to unit list & start it up
-        public void addIOUnitToPatch(PatchUnit unit)
+        //add new patch unit to unit list & start it up
+        public void addUnitToPatch(PatchUnit unit)
         {
             patchUnits.Add(unit);
-            canvas.disablePaletteItem(unit.paletteItem);    //so we disable menu item while unit is in graph
+            if (unit is InputUnit || unit is OutputUnit)
+            {
+                canvas.disablePaletteItem(unit.paletteItem);    //we disable menu item for i/o units while unit is in graph
+            }
             unit.start();
-        }
-
-        //handle modifier units differently
-        public PatchUnit addModiferToPatch(PatchUnit unit)
-        {
-            ModifierUnit modUnit = ((ModifierUnit)unit).copyUnit();
-            modUnit.patchWork = this;
-
-            patchUnits.Add(modUnit);
-            return modUnit;
         }
 
         //connections should already have been removed when this is called
@@ -254,16 +300,19 @@ namespace PatchWorker.Graph
 
         public PatchBox getPatchBox(PaletteItem item)
         {
-            PatchUnit unit = (PatchUnit)item.tag;               //get patch unit obj from menu item
-            if (unit is ModifierUnit)
+            PatchUnit unit = null;
+            if (item.tag is ModifierFactory)
             {
-                unit = addModiferToPatch(unit);                 //add new modifier unit to graph
+                ModifierFactory modFact = (ModifierFactory)item.tag;
+                unit = modFact.newModifierUnit();
             }
             else
             {
-                addIOUnitToPatch(unit);                         //add input/output unit to graph
+                unit = (PatchUnit)item.tag;                             //get patch unit obj from menu item
+
             }
-            PatchUnitBox newBox = new PatchUnitBox(unit);       //create new patch box from unit
+            addUnitToPatch(unit);                                       //add patch unit to graph
+            PatchUnitBox newBox = new PatchUnitBox(unit);               //create new patch box from unit
             return newBox;
         }
 
@@ -290,26 +339,28 @@ namespace PatchWorker.Graph
             removeCordFromPatch(((PatchUnitWire)wire).patchCord);
         }
 
+        //loading data from patch files -----------------------------
+
         public void loadPatchData(EnamlData data)
         {
             string version = data.getStringValue("patchworker-version", Settings.VERSION);
         }
 
+        //load a unit by name from the patch file and create a patch unit box for that unit
         public PatchBox loadPatchBox(EnamlData data, String boxPath)
         {
             String name = data.getStringValue(boxPath + ".name", "");
-            PatchUnit unit = getUnit(name);                             //get patch unit obj from patch file name
-            if (unit is ModifierUnit)
-            {
-                unit = addModiferToPatch(unit);                         //add new modifier unit to graph
+            PatchUnit unit = getUnit(name);                             //get patch unit obj from name in patch file
+            if (unit == null)
+            {                
+                ModifierFactory modFact = getModFactory(name);                      //if not found in i/o units, must be a modifier
+                int modNum = data.getIntValue(boxPath + ".mod-num", 1);
+                unit = modFact.loadUnitFromPatch(data, boxPath, modNum);
             }
-            else
-            {
-                addIOUnitToPatch(unit);                                 //add input/output unit to graph
-            }
+            addUnitToPatch(unit);                                       //add patch unit to graph
             PatchUnitBox newBox = new PatchUnitBox(unit);               //create new patch box from unit
 
-            if (unit is OutputUnit || unit is ModifierUnit)
+            if (unit is OutputUnit)
             {
                 int progNum = data.getIntValue(boxPath + ".program", 0);
                 ProgramPanel progPanel = (ProgramPanel)newBox.getPanel("programmer");
@@ -327,6 +378,8 @@ namespace PatchWorker.Graph
             return newWire;
         }
 
+        //saving data from patch files ------------------------------
+
         public void savePatchData(EnamlData data)
         {
             data.setStringValue("patchworker-version", Settings.VERSION);
@@ -336,9 +389,19 @@ namespace PatchWorker.Graph
         {
             PatchUnitBox unitBox = (PatchUnitBox)box;
             PatchUnit unit = unitBox.unit;
-            data.setStringValue(path + ".name", unit.name);
 
-            if (unit is OutputUnit || unit is ModifierUnit)
+            if (unit is ModifierUnit)
+            {
+                ModifierUnit modUnit = (ModifierUnit)unit;
+                data.setStringValue(path + ".name", modUnit.modFact.plugName);      //use the modifier plugin's name
+                data.setIntValue(path + ".mod-num", modUnit.modNum);
+            }
+            else
+            {
+                data.setStringValue(path + ".name", unit.name);
+            }
+
+            if (unit is OutputUnit)
             {
                 ProgramPanel progPanel = (ProgramPanel)unitBox.getPanel("programmer");
                 data.setIntValue(path + ".program", progPanel.progNum);
@@ -355,4 +418,7 @@ namespace PatchWorker.Graph
             patchWnd.patchHasChanged();
         }
     }
+
 }
+
+//Console.WriteLine("there's no sun in the shadow of the wizard");

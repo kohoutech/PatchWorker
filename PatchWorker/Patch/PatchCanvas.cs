@@ -23,8 +23,6 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
-using System.Xml;
-using System.Xml.Serialization;
 using System.Drawing.Drawing2D;
 
 using Origami.ENAML;
@@ -33,7 +31,7 @@ namespace Transonic.Patch
 {
     public class PatchCanvas : Control
     {
-        public IPatchView patchwin;         //the window that holds this canvas
+        public IPatchModel patchwin;         //the window that holds this canvas
         public PatchPalette palette;
 
         List<PatchBox> boxList;             //the boxes on the canvas
@@ -61,7 +59,7 @@ namespace Transonic.Patch
         PatchPanel trackingPanel;
 
         //cons
-        public PatchCanvas(IPatchView _patchwin)
+        public PatchCanvas(IPatchModel _patchwin)
         {
             patchwin = _patchwin;
 

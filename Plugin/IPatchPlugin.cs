@@ -21,11 +21,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Origami.ENAML;
 
 namespace PatchWorker.Plugin
 {
     public interface IPatchPlugin
     {
+        //set plugin's modifier ref so plugin can callback to modifier unit
+        void setModifier(IPatchModifer modUnit);
+
         //get plugin's name
         String getName();
 
@@ -40,5 +44,11 @@ namespace PatchWorker.Plugin
 
         //send MIDI msg to plugin; plugin will send response back to modifier's <sendMidiMessage> method
         void handleMidiMessage(byte[] msg);
+
+        //load plugin specific settings from a patch file in ENAML format
+        void loadFromPatch(EnamlData data, string dataPath);
+
+        //save plugin specific settings to a patch file in ENAML format
+        void saveToPatch(EnamlData data, string dataPath);
     }
 }

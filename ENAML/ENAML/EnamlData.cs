@@ -29,19 +29,18 @@ namespace Origami.ENAML
 {
     public class EnamlData
     {
-        String filename;
         SettingsStem root;
 
         public EnamlData()
         {
             root = null;
-            filename = null;
         }
 
-        public EnamlData(String _filename)
-            : this()
+        //- reading in --------------------------------------------------------
+
+        public static EnamlData loadFromFile(String filename)
         {
-            filename = _filename;
+            EnamlData enaml = null;
             string[] lines = null;
             try
             {
@@ -49,13 +48,12 @@ namespace Origami.ENAML
             }
             catch (Exception e)
             {
-                return;
+                return enaml;
             }
-
-            parseRoot(lines);
+            enaml = new EnamlData();
+            enaml.parseRoot(lines);
+            return enaml;
         }
-
-        //- reading in --------------------------------------------------------
 
         char[] wspace = new char[] { ' ' };
 
@@ -142,17 +140,19 @@ namespace Origami.ENAML
 
         public String getStringValue(String path, String defval)
         {
-            String result = defval;
             if (root != null)
             {
-                result = findLeafValue(path, root);
+                String strval = findLeafValue(path, root);
+                if (strval != null)
+                {
+                    return strval;
+                }
             }
-            return result;
+            return defval;
         }
 
         public int getIntValue(String path, int defval)
         {
-            int result = defval;
             if (root != null)
             {
                 String intstr = findLeafValue(path, root);
@@ -160,54 +160,57 @@ namespace Origami.ENAML
                 {
                     try
                     {
-                        result = Int32.Parse(intstr);
+                        int intval = Int32.Parse(intstr);
+                        return intval;
                     }
                     catch (Exception e)
-                    {
+                    {                        
                     }
                 }
             }
-            return result;
+            return defval;
         }
 
-        public List<String> getSubpathKeys(String path)
+        private void getSubpathKeys(SettingsStem subtree, String path, List<String> keyList)
         {
-            List<String> result = new List<string>();
-            SettingsStem subtree = root;
-            bool done = false;
-            while (!done)
+            if (subtree == null) return;
+
+            int dotpos = path.IndexOf('.');
+            if (dotpos != -1)                                   //not at end of path - path is name.subpath
             {
-                int dotpos = path.IndexOf('.');
-                if (dotpos != -1)                                   //not at end of path - path is name.subpath
+                String name = path.Substring(0, dotpos);
+                String subpath = path.Substring(dotpos + 1);              //remove name from start of path
+                if (subtree.children.ContainsKey(name))
                 {
-                    String name = path.Substring(0, dotpos);
-                    String subpath = path.Substring(dotpos + 1);    //break path apart
-                    if (subtree.children.ContainsKey(name))
+                    SettingsNode val = subtree.children[name];
+                    if (val != null && val is SettingsStem)
                     {
-                        SettingsNode val = subtree.children[name];
-                        if (val != null && val is SettingsStem)
-                        {
-                            subtree = (SettingsStem)val;
-                        }
+                        getSubpathKeys((SettingsStem)val, subpath, keyList);
                     }
-                }
-                else
-                {
-                    if (subtree.children.ContainsKey(path))
-                    {
-                        SettingsNode val = subtree.children[path];
-                        if (val != null && val is SettingsStem)
-                        {
-                            foreach (string key in ((SettingsStem)val).children.Keys)
-                            {
-                                result.Add(key);
-                            }
-                        }
-                    }
-                    done = true;
                 }
             }
-            return result;
+            else
+            {
+                if (subtree.children.ContainsKey(path))      //at end of path
+                {
+                    SettingsNode val = subtree.children[path];
+                    if (val != null && val is SettingsStem)
+                    {
+                        foreach (string key in ((SettingsStem)val).children.Keys)
+                        {
+                            keyList.Add(key);
+                        }
+                    }
+                }
+            }            
+        }
+
+        //returns an empty list if the path is invalid
+        public List<String> getPathKeys(String path)
+        {
+            List<string> keyList = new List<String>();
+            getSubpathKeys(root, path, keyList);
+            return keyList;
         }
 
         //- setting values ----------------------------------------------------
@@ -260,13 +263,7 @@ namespace Origami.ENAML
 
         //- storing out ------------------------------------------------
 
-        public bool saveToFile(String _filename)
-        {
-            filename = _filename;
-            return saveToFile();
-        }
-
-        public bool saveToFile()
+        public bool saveToFile(String filename)
         {
             List<String> lines = new List<string>();
             storeSubTree(lines, root, "");
