@@ -269,6 +269,10 @@ namespace PatchWorker.Graph
             {
                 canvas.enablePaletteItem(unit.paletteItem);     //re-enable menu items for input and output units            
             }
+            if (unit is ModifierUnit)
+            {
+                ((ModifierUnit)unit).plugin.closePluginDialog();       //close plugin's dialog if its open
+            }
             unit.stop();
         }
 
@@ -395,6 +399,7 @@ namespace PatchWorker.Graph
                 ModifierUnit modUnit = (ModifierUnit)unit;
                 data.setStringValue(path + ".name", modUnit.modFact.plugName);      //use the modifier plugin's name
                 data.setIntValue(path + ".mod-num", modUnit.modNum);
+                modUnit.saveUnitToPatch(data, path);
             }
             else
             {
@@ -416,6 +421,16 @@ namespace PatchWorker.Graph
         public void patchHasChanged()
         {
             patchWnd.patchHasChanged();
+        }
+
+        //called when the canvas clears all the boxes and wires
+        public void patchHasBeenCleared()
+        {
+            //reset unit count for all factories
+            foreach (ModifierFactory modFact in modifierFactoryList)
+            {
+                modFact.resetUnitCount();
+            }            
         }
     }
 

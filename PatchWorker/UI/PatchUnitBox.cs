@@ -51,9 +51,11 @@ namespace PatchWorker.UI
         public override void onTitleDoubleClick()
         {
             unit.editSettings();
-            title = unit.name;
-            unit.paletteItem.name = unit.name;
-            canvas.Invalidate();
+            if (!title.Equals(unit.name))
+            {
+                title = unit.name;
+                canvas.Invalidate();
+            }
         }
     }
 }

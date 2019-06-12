@@ -39,43 +39,11 @@ namespace PatchWorker.UI
             patchCord = _patchCord;
         }
 
-        //public void connectDestJack(PatchPanel _destPanel)
-        //{
-        //    destPanel = _destPanel;
-        //    destEnd = destPanel.ConnectionPoint;
-        //    destPanel.connectLine(this);                            //connect line & dest panel in view
-
-        //    connector = srcPanel.makeConnection(destPanel);         //connect panels in model, get model connector
-        //    if (connector != null)
-        //    {
-        //        connector.setLine(this);                                //and set this as connector's view
-        //    }
-        //}
-
-        //public void disconnect()
-        //{
-        //    if (srcPanel != null)
-        //    {
-        //        srcPanel.breakConnection(destPanel);                 //disconnect panels in model
-        //        srcPanel.disconnectLine(this);
-        //        srcPanel = null;
-        //    }
-
-        //    if (destPanel != null)
-        //    {
-        //        destPanel.disconnectLine(this);
-        //        destPanel = null;                                           //disconnect line from both panels in view
-        //    }
-        //    path = null;
-        //}
-
-
         public override void onDoubleClick(Point pos)
         {
             PatchCordDialog patchdlg = new PatchCordDialog(patchCord);
             patchdlg.setTitle(patchCord.srcUnit.name, patchCord.destUnit.name);
             patchdlg.initDialogValues(patchCord);
-            //patchdlg.Icon = canvas.patchwin.
             patchdlg.Show(canvas);
         }
     }

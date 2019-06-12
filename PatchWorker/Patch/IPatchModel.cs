@@ -42,6 +42,8 @@ namespace Transonic.Patch
         //allows the backing model to disconnect two units
         void removePatchWire(PatchWire wire);
 
+        //- loading/saving to patch files -------------------------------------
+
         //load model specific data from the patch file stored in ENAML format
         void loadPatchData(EnamlData data);
 
@@ -60,5 +62,9 @@ namespace Transonic.Patch
 
         //let the model know the patch has changed
         void patchHasChanged();
+
+        //let the model know the patch has been cleared
+        void patchHasBeenCleared();
+
     }
 }

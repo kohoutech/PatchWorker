@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Xml;
 
 namespace PatchWorker.Graph
 {
@@ -42,32 +41,32 @@ namespace PatchWorker.Graph
             }
         }
 
-        public static Programmer loadFromXML(PatchUnit _unit, XmlNode programmerNode)
-        {
-            Programmer programmer = new Programmer(_unit);
-            programmer.programs.Clear();
-            foreach (XmlNode progNode in programmerNode.ChildNodes)
-            {
-                if (progNode.Name.Equals("program"))
-                {
-                    String name = progNode.Attributes["name"].Value;
-                    programmer.programs.Add(name);
-                }
-            }
-            return programmer;            
-        }
+        //public static Programmer loadFromXML(PatchUnit _unit, XmlNode programmerNode)
+        //{
+        //    Programmer programmer = new Programmer(_unit);
+        //    programmer.programs.Clear();
+        //    foreach (XmlNode progNode in programmerNode.ChildNodes)
+        //    {
+        //        if (progNode.Name.Equals("program"))
+        //        {
+        //            String name = progNode.Attributes["name"].Value;
+        //            programmer.programs.Add(name);
+        //        }
+        //    }
+        //    return programmer;            
+        //}
 
-        public void saveToXML(XmlWriter xmlWriter)
-        {
-            xmlWriter.WriteStartElement("programmer");
+        //public void saveToXML(XmlWriter xmlWriter)
+        //{
+        //    xmlWriter.WriteStartElement("programmer");
 
-            foreach (String progName in programs)
-            {
-                xmlWriter.WriteStartElement("program");
-                xmlWriter.WriteAttributeString("name", progName);
-                xmlWriter.WriteEndElement();
-            }
-            xmlWriter.WriteEndElement();
-        }
+        //    foreach (String progName in programs)
+        //    {
+        //        xmlWriter.WriteStartElement("program");
+        //        xmlWriter.WriteAttributeString("name", progName);
+        //        xmlWriter.WriteEndElement();
+        //    }
+        //    xmlWriter.WriteEndElement();
+        //}
     }
 }

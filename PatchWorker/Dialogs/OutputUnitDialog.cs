@@ -37,7 +37,7 @@ namespace PatchWorker.Dialogs
         public String name;
         public String devName;
         public int chanNum;
-        public int progNum;
+        public int progCount;
 
         //for creating new output units
         public OutputUnitDialog(PatchWindow _patchWnd)
@@ -56,7 +56,7 @@ namespace PatchWorker.Dialogs
             name = null;
             devName = null;
             chanNum = -1;
-            progNum = 0;
+            progCount = 0;
         }
 
         //for updating existing output units
@@ -103,11 +103,11 @@ namespace PatchWorker.Dialogs
 
             try
             {
-                progNum = Int32.Parse(txtProgCount.Text);
+                progCount = Int32.Parse(txtProgCount.Text);
             }
             catch (Exception ex)
             {
-                progNum = 0;
+                progCount = 0;
             }
 
             DialogResult = DialogResult.OK;

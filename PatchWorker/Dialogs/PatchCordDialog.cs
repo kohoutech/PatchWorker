@@ -68,15 +68,15 @@ namespace PatchWorker.Dialogs
             this.Text = "Key Range / Transpose [" + srcName + " --> " + destName + "]";
         }
 
-        public void initDialogValues(int _transpose, int _loRange, int _hiRange) 
+        public void initDialogValues(PatchCord cord)            
         {
-            prevTranspose = transpose;
-            prevLoRange = loRange;
-            prevHiRange = hiRange;
+            prevTranspose = cord.transpose;
+            prevLoRange = cord.loRange;
+            prevHiRange = cord.hiRange;
 
-            transpose = _transpose;
-            loRange = _loRange;
-            hiRange = _hiRange;
+            transpose = cord.transpose;
+            loRange = cord.loRange;
+            hiRange = cord.hiRange;
 
             int octave = transpose / 12;
             if (transpose < 0) octave = ((transpose + 1) / 12) - 1;
@@ -127,6 +127,5 @@ namespace PatchWorker.Dialogs
             applySettings();
             this.Close();
         }
-
     }
 }
