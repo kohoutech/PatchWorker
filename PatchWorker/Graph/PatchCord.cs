@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 1995-2017  George E Greaney
+Copyright (C) 1995-2019  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,19 +22,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Drawing;
-using System.Xml;
 
+using PatchWorker.Dialogs;
 using Transonic.Patch;
 using Transonic.MIDI;
-using PatchWorker.Dialogs;
 
 namespace PatchWorker.Graph
 {
-    public class PatchCord : iPatchConnector
+    public class PatchCord 
     {
         public PatchUnit srcUnit;
         public PatchUnit destUnit;
-        public PatchLine line;
+        //public PatchWire line;
         public int transpose;
         public int loRange;
         public int hiRange;
@@ -55,20 +54,12 @@ namespace PatchWorker.Graph
             destUnit = null;
         }
 
-        public void setLine(PatchLine _line)
-        {
-            line = _line;
-        }
+        //public void setLine(PatchWire _line)
+        //{
+        //    line = _line;
+        //}
 
 //- user input ----------------------------------------------------------------
-
-        public void onDoubleClick(Point pos)
-        {
-            PatchCordDialog patchdlg = new PatchCordDialog(this);
-            patchdlg.setTitle(srcUnit.name, destUnit.name);
-            patchdlg.initDialogValues(transpose, loRange, hiRange);
-            patchdlg.Show(line.canvas);
-        }
 
         public void setPatchCordValues(PatchCordDialog patchdlg)
         {
@@ -78,11 +69,6 @@ namespace PatchWorker.Graph
 
             //Console.WriteLine(" PATCH CORD: range = " + loRange + " to " + hiRange + " transpose = " + transpose);
         }
-
-        public void onRightClick(Point pos)
-        {
-        }
-
 
 //- processing ----------------------------------------------------------------
 
@@ -121,31 +107,6 @@ namespace PatchWorker.Graph
                 destUnit.processMidiMsg(msg);
             }
         }
-
-//- persistance ---------------------------------------------------------------
-
-        public void loadFromXML(XmlNode lineNode)
-        {
-            foreach (XmlNode cordNode in lineNode.ChildNodes)
-            {
-                if (cordNode.Name.Equals("patchcord"))
-                {
-                    transpose = Convert.ToInt32(cordNode.Attributes["transpose"].Value);
-                    loRange = Convert.ToInt32(cordNode.Attributes["lorange"].Value);
-                    hiRange = Convert.ToInt32(cordNode.Attributes["hirange"].Value);
-                }
-            }
-        }
-
-        public void saveToXML(XmlWriter xmlWriter)
-        {
-            xmlWriter.WriteStartElement("patchcord");
-            xmlWriter.WriteAttributeString("transpose", transpose.ToString());
-            xmlWriter.WriteAttributeString("lorange", loRange.ToString());
-            xmlWriter.WriteAttributeString("hirange",hiRange.ToString());            
-            xmlWriter.WriteEndElement();
-        }
-
     }
 }
 

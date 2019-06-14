@@ -25,7 +25,6 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using System.Xml;
 using System.IO;
 
 using PatchWorker.UI;
@@ -54,6 +53,7 @@ namespace PatchWorker
 
         String patchFolder;
         String patchFilename;
+        String pluginFolder;
 
         bool canvasHidden;
         public int curCanvasHeight;
@@ -95,6 +95,7 @@ namespace PatchWorker
             this.Location = new Point(settings.patchWndX, settings.patchWndY);
 
             patchFolder = settings.patchFolder;
+            pluginFolder = settings.pluginFolder;
             patchFilename = null;
             this.Text = "PatchWorker [new patch]";
             hasChanged = false;
@@ -160,19 +161,20 @@ namespace PatchWorker
 #else
 
             openPatchDialog.InitialDirectory = patchFolder;
+            openPatchDialog.FileName = "";
             openPatchDialog.DefaultExt = "*.pwp";
             openPatchDialog.Filter = "patch files|*.pwp|All files|*.*";
-            openPatchDialog.ShowDialog();
+            DialogResult result = openPatchDialog.ShowDialog();
             String filename = openPatchDialog.FileName;
+            if ((result == DialogResult.Cancel) || (filename.Length == 0)) return;           //user canceled load dialog
 #endif
-            if (filename.Length > 0)
-            {
-                patchFilename = filename;
-                canvas.loadPatch(patchFilename);
-                this.Text = "PatchWorker [" + patchFilename + "]";
-                hasChanged = false;
-                patchFolder = Path.GetDirectoryName(Path.GetFullPath(filename));
-            }
+
+            patchFilename = filename;
+            canvas.loadPatch(patchFilename);
+            this.Text = "PatchWorker [" + patchFilename + "]";
+            hasChanged = false;
+            patchFolder = Path.GetDirectoryName(Path.GetFullPath(filename));
+
         }
 
         public void savePatch(bool newName)
@@ -184,9 +186,9 @@ namespace PatchWorker
                 savePatchDialog.InitialDirectory = patchFolder;
                 savePatchDialog.DefaultExt = "*.pwp";
                 savePatchDialog.Filter = "patch files|*.pwp|All files|*.*";
-                savePatchDialog.ShowDialog();
+                DialogResult result = savePatchDialog.ShowDialog();
                 filename = savePatchDialog.FileName;
-                if (filename.Length == 0) return;           //user canceled save dialog
+                if ((result == DialogResult.Cancel) || (filename.Length == 0)) return;           //user canceled save dialog
 
                 //add default extention if filename doesn't have one
                 if (!filename.Contains('.'))
@@ -256,8 +258,31 @@ namespace PatchWorker
 
         public void addModifierUnit()
         {
-            String msg = "Patchworker modifers are still in development. Anon! Anon!";
-            MessageBox.Show(msg, "In the works");
+#if (DEBUG)
+            String filename = @"Plugin\PowerChord.dll";
+#else
+            openPatchDialog.InitialDirectory = pluginFolder;
+            openPatchDialog.FileName = "";
+            openPatchDialog.DefaultExt = "*.dll";
+            openPatchDialog.Filter = "patchworker plugin files|*.dll|All files|*.*";
+            DialogResult result = openPatchDialog.ShowDialog();
+            String filename = openPatchDialog.FileName;
+            if ((result == DialogResult.Cancel) || (filename.Length == 0)) return;           //user canceled plugin load dialog
+#endif
+
+            //we get back a modifier factory, but it gets thrown away if the plugin failed to load
+            ModifierFactory modFact = new ModifierFactory(filename);
+            if (modFact.enabled)
+            {
+                patchWork.addModiferFactory(modFact);
+                patchWork.updateUnitList();
+            }
+            else
+            {
+                String msg = "Unable to load PatchWorker plugin: " + filename;
+                MessageBox.Show(msg, "Plugin load error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            pluginFolder = Path.GetDirectoryName(Path.GetFullPath(filename));
         }
 
         public void addOutputUnit()

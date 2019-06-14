@@ -35,7 +35,7 @@ namespace PatchWorker.Graph
         public String plugName;
         public Type pluginType;
         public bool enabled;
-        public int plugCount;
+        public int unitCount;
 
         public ModifierFactory(string filename)
         {
@@ -44,7 +44,7 @@ namespace PatchWorker.Graph
             plugName = "";
             pluginType = null;
             enabled = false;
-            plugCount = 0;
+            unitCount = 0;
 
             try
             {
@@ -72,12 +72,18 @@ namespace PatchWorker.Graph
             }
         }
 
+        //we've removed all modifier units from the model, start over at 1;
+        public void resetUnitCount()
+        {
+            unitCount = 0;
+        }
+
         //create a new modifier unit when the modifier factory entry on the patch palette is clicked
         public ModifierUnit newModifierUnit()
         {
             IPatchPlugin plugin = (IPatchPlugin)Activator.CreateInstance(pluginType);       //create plugin from type info
 
-            ModifierUnit modUnit = new ModifierUnit(this, plugin, ++plugCount);
+            ModifierUnit modUnit = new ModifierUnit(this, plugin, ++unitCount);
 
             plugin.setModifier(modUnit);
             modUnit.patchWork = patchWork;
@@ -87,19 +93,21 @@ namespace PatchWorker.Graph
         //unlike input/output units, which are singletons and loaded/saved to/from the config file
         //there can be many modifiers in a patch of the same type, so we load them from the patch
         //and use the modNum val to distinguish between them
-        public ModifierUnit loadUnitFromPatch(EnamlData data, string dataPath, int modNum)
+        public ModifierUnit loadUnitFromPatch(EnamlData data, string dataPath, int unitNum)
         {
             IPatchPlugin plugin = (IPatchPlugin)Activator.CreateInstance(pluginType);
             plugin.loadFromPatch(data, dataPath);
 
-            if (modNum > plugCount) plugCount = modNum;     //so when we start adding more modifiers, 
+            if (unitNum > unitCount) unitCount = unitNum;     //so when we start adding more modifiers, 
             //their numbers won't conflict with the ones loaded from the patch
 
-            ModifierUnit modUnit = new ModifierUnit(this, plugin, modNum);
+            ModifierUnit modUnit = new ModifierUnit(this, plugin, unitNum);
             plugin.setModifier(modUnit);
             modUnit.patchWork = patchWork;
             return modUnit;
         }
+
+        //saving plugin specific data to the patch is handled by the modifier unit itself
 
         //- persistance -------------------------------------------------------
 

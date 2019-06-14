@@ -50,7 +50,6 @@
             this.allNotesOffMidiMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutHelpMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.PatchWndMenu.SuspendLayout();
             this.SuspendLayout();
             // 
             // PatchStatus
@@ -71,6 +70,12 @@
             // 
             // PatchWndMenu
             // 
+            this.PatchWndMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.fileMenuItem,
+            this.unitMenuItem,
+            this.canvasMenuItem,
+            this.midiMenuItem,
+            this.helpMenuItem});
             this.PatchWndMenu.Location = new System.Drawing.Point(0, 0);
             this.PatchWndMenu.Name = "PatchWndMenu";
             this.PatchWndMenu.Size = new System.Drawing.Size(384, 24);
@@ -235,8 +240,6 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "PatchWorker";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.PatchWindow_FormClosed);
-            this.PatchWndMenu.ResumeLayout(false);
-            this.PatchWndMenu.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 

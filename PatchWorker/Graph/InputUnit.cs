@@ -34,9 +34,9 @@ namespace PatchWorker.Graph
 {
     public class InputUnit : PatchUnit
     {
-        String indevName;
-        int channelNum;
-        bool started;
+        public String indevName;
+        public int channelNum;
+        public bool started;
 
         //cons
         public InputUnit(String name, String _indevName, int _channel)
@@ -49,12 +49,18 @@ namespace PatchWorker.Graph
 
         public override void editSettings()
         {
-            //InputUnitDialog unitdlg = new InputUnitDialog(patchworker, name, indevName, channelNum);
-            InputUnitDialog unitdlg = null;
+            InputUnitDialog unitdlg = new InputUnitDialog(patchWork.patchWnd, name, indevName, channelNum);
+            unitdlg.Icon = patchWork.patchWnd.Icon;
             unitdlg.ShowDialog();
             if (unitdlg.DialogResult == System.Windows.Forms.DialogResult.OK)
             {
-                name = unitdlg.name;
+                if (!name.Equals(unitdlg.name))
+                {
+                    name = unitdlg.name;
+                    paletteItem.name = name;
+                    paletteItem.itembox.Text = name;
+                    paletteItem.itembox.Invalidate();            //update name in palette entry
+                }
                 if (!indevName.Equals(unitdlg.devName))         //if we've changed input devices, restart new dev;
                 {
                     stop();
@@ -68,7 +74,7 @@ namespace PatchWorker.Graph
         public override List<PatchPanel> getPatchPanels(PatchBox _box)
         {
             List<PatchPanel> panels = new List<PatchPanel>();
-            panels.Add(new OutJackPanel(_box));
+            panels.Add(new OutJackPanel(_box, "output 1"));
             return panels;
         }
 
@@ -76,25 +82,30 @@ namespace PatchWorker.Graph
 
         public override void start()
         {
+#if (!DEBUG)
             if (!started)
             {
-                //inputDev = patchworker.midiSystem.findInputDevice(indevName);
                 inputDev.connectUnit(this);
                 inputDev.open();
                 inputDev.start();              //open device & start receiving input
                 started = true;
             }
+#endif
         }
 
         public override void stop()
         {
+#if (!DEBUG)
             inputDev.stop();
             started = false;
+#endif
         }
 
         public override void receiveMessage(byte[] data)
         {
             Message msg = Message.getMessage(data);                  //convert incoming bytes into midi message
+            //Console.WriteLine("got midi msg on input {0}", name); 
+
 
             if ((msg is ChannelMessage) &&                              //filter channel msgs by channel num
                 (((ChannelMessage)msg).channel == (channelNum - 1)) ||

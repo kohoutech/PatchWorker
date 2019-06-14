@@ -33,31 +33,36 @@ namespace PatchWorker.Graph
 {
     public class OutputUnit : PatchUnit
     {
-        OutputDevice outDev;
-        String outDevName;
-        int channelNum;
-        bool started;
+        public OutputDevice outDev;
+        public String outDevName;
+        public int channelNum;
+        public bool started;
 
         //user cons
-        public OutputUnit(String name, String _outDevName, int _channel)
+        public OutputUnit(String name, String _outDevName, int _channel, int _progCount)
             : base(name)
         {
             outDevName = _outDevName;
             channelNum = _channel;
-            //progCount = _progCount;
-            progCount = 0;
+            progCount = _progCount;
             programmer = new Programmer(this);
             started = false;
         }
 
         public override void editSettings()
         {
-            //OutputUnitDialog unitdlg = new OutputUnitDialog(patchworker, name, outDevName, channelNum, progCount);
-            OutputUnitDialog unitdlg = null;
+            OutputUnitDialog unitdlg = new OutputUnitDialog(patchWork.patchWnd, name, outDevName, channelNum, progCount);
+            unitdlg.Icon = patchWork.patchWnd.Icon;
             unitdlg.ShowDialog();
             if (unitdlg.DialogResult == System.Windows.Forms.DialogResult.OK)
             {
-                name = unitdlg.name;
+                if (!name.Equals(unitdlg.name))
+                {
+                    name = unitdlg.name;
+                    paletteItem.name = name;
+                    paletteItem.itembox.Text = name;
+                    paletteItem.itembox.Invalidate();            //update name in palette entry
+                }
                 if (!outDevName.Equals(unitdlg.devName))         //if we've changed input devices, restart new dev;
                 {
                     stop();
@@ -65,25 +70,24 @@ namespace PatchWorker.Graph
                     start();
                 }
                 channelNum = unitdlg.chanNum;
-                progCount = unitdlg.progNum;
-            }
+                progCount = unitdlg.progCount;
+            }            
         }
 
         public override List<PatchPanel> getPatchPanels(PatchBox _box)
         {
             List<PatchPanel> panels = new List<PatchPanel>();
-            panels.Add(new ProgramPanel(_box));
-            panels.Add(new InJackPanel(_box));              //output unit has an input jack to act as a sink
+            panels.Add(new InJackPanel(_box, "input 1"));              //output unit has an input jack to act as a sink
+            panels.Add(new ProgramPanel(_box, "programmer"));
             return panels;
         }
 
-//- operation ---------------------------------------------------------------
+        //- operation ---------------------------------------------------------------
 
         public override void start()
         {
             if (!started)
             {
-                //outDev = patchworker.midiSystem.findOutputDevice(outDevName);
                 outDev.open();
             }
         }
@@ -96,13 +100,17 @@ namespace PatchWorker.Graph
         //instead of sending msg to next unit in patch, we send it to the output device
         public override void processMidiMsg(Message msg)
         {
+            //Console.WriteLine("sending midi msg on output {0}", name); 
+
             if (outDev != null)
             {
                 if (msg is ChannelMessage)       //if channel msg, route to output device
                 {
                     ((ChannelMessage)msg).channel = channelNum - 1;
                 }
+                
                 outDev.sendMessage(msg.getDataBytes());
+                //Console.WriteLine("sent midi msg on output {0}", name);
             }
         }
 
@@ -113,15 +121,22 @@ namespace PatchWorker.Graph
             processMidiMsg(msg);
         }
 
-//- persistance ---------------------------------------------------------------
+        public void sendAllNotesOff()
+        {
+            byte[] msg = new byte[3] { (byte)(0xB0 + channelNum), 123, 0 };
+            outDev.sendMessage(msg);                
+        }
+
+        //- persistance ---------------------------------------------------------------
 
         public static OutputUnit loadFromConfig(EnamlData data, String path)
         {
             String name = data.getStringValue(path + ".name", "no name");
             String devicename = data.getStringValue(path + ".device-name", "no name");
             int channel = data.getIntValue(path + ".channel", 0);
+            int progCount = data.getIntValue(path + ".program-count", 0);
 
-            return new OutputUnit(name, devicename, channel);
+            return new OutputUnit(name, devicename, channel, progCount);
         }
 
         public void saveToConfig(EnamlData data, String path)
@@ -129,6 +144,7 @@ namespace PatchWorker.Graph
             data.setStringValue(path + ".name", name);
             data.setStringValue(path + ".device-name", outDevName);
             data.setIntValue(path + ".channel", channelNum);
+            data.setIntValue(path + ".program-count", progCount);
         }
     }
 }

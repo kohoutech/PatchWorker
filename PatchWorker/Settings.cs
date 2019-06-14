@@ -43,37 +43,40 @@ namespace PatchWorker
         public int patchWndHeight;
         public int patchWndWidth;
         public String patchFolder;
+        public String pluginFolder;
 
         public Settings(PatchWindow _patchWnd)
         {
             patchWnd = _patchWnd;
 
-            EnamlData data = new EnamlData(CONFIGFILENAME);
+            EnamlData data = EnamlData.loadFromFile(CONFIGFILENAME);
 
             string version = data.getStringValue("patchworker-version", VERSION);
             patchWndX = data.getIntValue("global-settings.patch-window.x", 100);
             patchWndY = data.getIntValue("global-settings.patch-window.y", 100);
             patchWndWidth = data.getIntValue("global-settings.patch-window.width", 400);
             patchWndHeight = data.getIntValue("global-settings.patch-window.height", 400);
-            patchFolder = data.getStringValue("global-settings.patch-window.patch-folder", Application.StartupPath);
+            patchFolder = data.getStringValue("global-settings.patch-folder", Application.StartupPath);
+            pluginFolder = data.getStringValue("global-settings.plugin-folder", Application.StartupPath);
 
             patchWnd.patchWork.loadUnits(data);
         }
 
         public void save()
         {
-            EnamlData data = new EnamlData(CONFIGFILENAME);
+            EnamlData data = new EnamlData();
 
             data.setStringValue("patchworker-version", VERSION);
             data.setIntValue("global-settings.patch-window.x", patchWndX);
             data.setIntValue("global-settings.patch-window.y", patchWndY);
             data.setIntValue("global-settings.patch-window.width", patchWndWidth);
             data.setIntValue("global-settings.patch-window.height", patchWndHeight);
-            data.setStringValue("global-settings.patch-window.patch-folder", patchFolder);
+            data.setStringValue("global-settings.patch-folder", patchFolder);
+            data.setStringValue("global-settings.plugin-folder", pluginFolder);
 
             patchWnd.patchWork.saveUnits(data);
 
-            data.saveToFile();
+            data.saveToFile(CONFIGFILENAME);
         }
     }
 }

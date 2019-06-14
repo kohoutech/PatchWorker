@@ -1,6 +1,6 @@
 ﻿/* ----------------------------------------------------------------------------
 Patchworker : a midi patchbay
-Copyright (C) 1995-2018  George E Greaney
+Copyright (C) 1995-2019  George E Greaney
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -26,41 +26,42 @@ using Transonic.MIDI;
 using Transonic.MIDI.System;
 using Transonic.Patch;
 
+//patch graph unit base class - the graph is composed of subclasses of patch units (input/output/modifiers)
+
 namespace PatchWorker.Graph
 {
     public class PatchUnit : SystemUnit
     {
-        public PatchWorker patchworker;
-        List<PatchCord> destList;       //connections to units downstream - not used by output units
-        public System.Windows.Forms.ToolStripItem menuItem;
-        public Programmer programmer;
-        public int progCount;
-        public bool enabled;
+        public PatchWork patchWork;
+        List<PatchCord> destList;           //connections to units downstream - not used by output units
 
-        public PatchUnit(PatchWorker _patchworker, String name, bool _enabled) :  base(name)
+        public Programmer programmer;       //used by modifier & output units
+        public int progCount;
+
+        public bool enabled;
+        public PaletteItem paletteItem;     //to let the palette know when to enable/disable unit in palette items
+
+        public PatchUnit(String name) :  base(name)
         {
-            patchworker = _patchworker;
+            patchWork = null;
             destList = new List<PatchCord>();
-            menuItem = null;
+
             programmer = null;
             progCount = 0;
-            enabled = _enabled;
+            enabled = true;
+            paletteItem = null;
         }
 
         public virtual void editSettings()
         {
         }
 
-        public void delete()
+        //perform any needed clean-up
+        public virtual void delete()
         {
-            patchworker.removeUnitFromPatch(this);
         }
 
-        public void setMenuItem(System.Windows.Forms.ToolStripItem _menuItem)
-        {
-            menuItem = _menuItem;
-        }
-
+        //subclasses will return a list of patch panels (depending on type) that will be displayed in the patch box on the canvas
         public virtual List<PatchPanel> getPatchPanels(PatchBox _box)
         {
             return null;
@@ -68,6 +69,7 @@ namespace PatchWorker.Graph
 
 //- operation ---------------------------------------------------------------
 
+        //start & stop processing midi messages
         public virtual void start()
         {
         }
@@ -84,22 +86,10 @@ namespace PatchWorker.Graph
             return cord;
         }
 
-        public virtual void disconnectDest(PatchUnit dest)
+        public virtual void disconnectCord(PatchCord cord)
         {
-            PatchCord patchcord = null;
-            foreach (PatchCord cord in destList)
-            {
-                if (cord.destUnit == dest)
-                {
-                    patchcord = cord;
-                    break;
-                }
-            }
-            if (patchcord != null)
-            {
-                patchcord.disconnect();
-                destList.Remove(patchcord);
-            }
+            cord.disconnect();              //disconnect cord from dest
+            destList.Remove(cord);          //disconnect cord from source
         }
 
         public virtual void processMidiMsg(Message _msg)
@@ -109,19 +99,6 @@ namespace PatchWorker.Graph
                 Message msg = _msg.copy();          //make a new copy of message for each cord
                 cord.processMidiMsg(msg);
             }
-
-        }
-    }
-
-//- exceptions ----------------------------------------------------------------
-
-    public class PatchUnitLoadException : Exception
-    {
-        public String unitName;
-
-        public PatchUnitLoadException(String _name, String msg) : base(msg)
-        {
-            unitName = _name;
         }
     }
 }
