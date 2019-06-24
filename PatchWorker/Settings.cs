@@ -32,7 +32,7 @@ namespace PatchWorker
 {
     public class Settings
     {
-        public static String VERSION = "1.3.0";
+        public static String VERSION = "1.3.1";
         const String CONFIGFILENAME = "patchworker.cfg";
 
         PatchWindow patchWnd;

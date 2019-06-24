@@ -30,8 +30,10 @@ namespace Transonic.Patch
     public class PatchPalette : Control
     {
         const int PALLETEWIDTH = 150;
+        const int ITEMBOXHEIGHT = 25;
         public Color PALETTECOLOR = Color.Ivory;
         public Color DISABLEDCOLOR = Color.LightGray;
+        public Color GROUPITEMCOLOR = Color.LightBlue;
 
         public PatchCanvas canvas;
         public Button btnOpen;
@@ -40,9 +42,11 @@ namespace Transonic.Patch
         private Panel panelSpace;
 
         public int buttonWidth;
+        public int itemWidth;
         bool isOpen;
 
         public List<PaletteItem> items;
+        public List<Label> itemBoxes;
 
         public PatchPalette(PatchCanvas _canvas)
         {
@@ -74,6 +78,7 @@ namespace Transonic.Patch
             btnOpen.Size = new System.Drawing.Size(scrollbar.Width, scrollbar.Width);
             btnOpen.Location = new System.Drawing.Point(this.Width - scrollbar.Width, 0);
             buttonWidth = btnOpen.Width;
+            itemWidth = this.Width - buttonWidth;
             isOpen = true;
 
             //set panel space on left of scroll bar
@@ -85,6 +90,7 @@ namespace Transonic.Patch
             this.Controls.Add(panelSpace);
 
             items = new List<PaletteItem>();        //empty palette list
+            itemBoxes = new List<Label>();
             setItems(items);
         }
 
@@ -94,34 +100,70 @@ namespace Transonic.Patch
             updateScrollBar();
         }
 
+        public Label createPaletteEntry(PaletteItem item)
+        {
+            Label itemBox = new Label();
+            item.itembox = itemBox;
+            itemBox.Text = item.name;
+            itemBox.TextAlign = ContentAlignment.MiddleCenter;
+            itemBox.BorderStyle = BorderStyle.FixedSingle;
+            if (!item.enabled)
+            {
+                itemBox.BackColor = DISABLEDCOLOR;
+                itemBox.Enabled = false;
+            }
+            itemBox.Location = new Point(0, 0);
+            itemBox.Size = new Size(itemWidth, ITEMBOXHEIGHT);      //box height will be set by group item when it's opened/closed
+            itemBox.Tag = item;
+            if (item is PaletteGroup)
+            {
+                itemBox.BackColor = GROUPITEMCOLOR;
+                itemBox.Click += new EventHandler(groupBox_DoubleClick);
+            }
+            else
+            {
+                itemBox.DoubleClick += new EventHandler(itemBox_DoubleClick);
+            }
+            return itemBox;
+        }
+
+        public void layoutPaletteItems()
+        {
+            int ypos = 0;
+            foreach (Label itemBox in itemBoxes)
+            {
+                itemBox.Location = new Point(0, ypos);
+                ypos += itemBox.Height;
+            }
+            panelSpace.Size = new Size(itemWidth, ypos);
+        }
+
         public void setItems(List<PaletteItem> _items)
         {
             items = _items;
             panelSpace.Controls.Clear();
+            itemBoxes.Clear();
 
-            int ypos = 0;
-            int itemWidth = this.Width - buttonWidth;
             foreach (PaletteItem item in items)
             {
-                Label itemBox = new Label();
-                item.itembox = itemBox;
-                itemBox.Text = item.name;
-                itemBox.TextAlign = ContentAlignment.MiddleCenter;
-                itemBox.BorderStyle = BorderStyle.FixedSingle;
-                if (!item.enabled)
-                {
-                    itemBox.BackColor = DISABLEDCOLOR;
-                    itemBox.Enabled = false;
-                }
-                itemBox.Location = new Point(0, ypos);
-                itemBox.Size = new Size(itemWidth, 25);                 //needs to have box height calculated
-                itemBox.Tag = item;
-                itemBox.DoubleClick += new EventHandler(itemBox_DoubleClick);
+                //handle group and non-group items first
+                Label itemBox = createPaletteEntry(item);
                 panelSpace.Controls.Add(itemBox);
-                ypos += itemBox.Height;
-            }
+                itemBoxes.Add(itemBox);
 
-            panelSpace.Size = new Size(itemWidth, ypos);
+                //if item is a group, then handle all that group's items
+                if (item is PaletteGroup)
+                {
+                    PaletteGroup group = (PaletteGroup)item;
+                    foreach (PaletteItem groupItem in group.items)
+                    {
+                        Label groupItemBox = createPaletteEntry(groupItem);
+                        panelSpace.Controls.Add(groupItemBox);
+                        itemBoxes.Add(groupItemBox);
+                    }
+                }
+            }
+            layoutPaletteItems();
             updateScrollBar();
         }
 
@@ -169,6 +211,20 @@ namespace Transonic.Patch
             }
         }
 
+        //when any palette group is double clicked
+        void groupBox_DoubleClick(object sender, EventArgs e)
+        {
+            PaletteGroup group = (PaletteGroup)((Label)sender).Tag;
+            group.isOpen = !group.isOpen;
+            foreach (PaletteItem item in group.items)
+            {
+                int width = item.itembox.Width;
+                item.itembox.Size = new Size(width, group.isOpen ? ITEMBOXHEIGHT : 0);
+            }
+            layoutPaletteItems();
+            this.Invalidate();
+        }
+
         //tells the canvas to open or close the palette
         public void btnOpen_Click(object sender, EventArgs e)
         {
@@ -203,12 +259,12 @@ namespace Transonic.Patch
     public class PaletteGroup : PaletteItem
     {
         public List<PaletteItem> items;
-        bool isOpen;
+        public bool isOpen;
 
         public PaletteGroup(String name) : base(name)
         {
             items = new List<PaletteItem>();
-            isOpen = false;
+            isOpen = true;
         }
 
         public void addItem(PaletteItem item)

@@ -112,32 +112,39 @@ namespace PatchWorker.Graph
         //wrap patch units in palette items so they can be displayed in canvas' palette
         public void updateUnitList()
         {
-            List<PaletteItem> items = new List<PaletteItem>();
+            PaletteGroup inputGroup = new PaletteGroup("input units");
             foreach (InputUnit inUnit in inputUnitList)
             {
                 PaletteItem item = new PaletteItem(inUnit.name);
                 item.tag = inUnit;
                 item.enabled = inUnit.enabled;
                 inUnit.paletteItem = item;
-                items.Add(item);
+                inputGroup.items.Add(item);
             }
 
+            PaletteGroup modifierGroup = new PaletteGroup("modifiers");
             foreach (ModifierFactory modFact in modifierFactoryList)
             {
                 PaletteItem item = new PaletteItem(modFact.plugName);
                 item.tag = modFact;
                 item.enabled = modFact.enabled;
-                items.Add(item);
+                modifierGroup.items.Add(item);
             }
 
+            PaletteGroup outputGroup = new PaletteGroup("output units");
             foreach (OutputUnit outUnit in outputUnitList)
             {
                 PaletteItem item = new PaletteItem(outUnit.name);
                 item.tag = outUnit;
                 item.enabled = outUnit.enabled;
                 outUnit.paletteItem = item;
-                items.Add(item);
+                outputGroup.items.Add(item);
             }
+
+            List<PaletteItem> items = new List<PaletteItem>();
+            items.Add(inputGroup);
+            items.Add(modifierGroup);
+            items.Add(outputGroup);
 
             canvas.setPaletteItems(items);
         }
