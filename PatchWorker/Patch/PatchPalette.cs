@@ -51,7 +51,7 @@ namespace Transonic.Patch
             this.BackColor = PALETTECOLOR;
             this.TabStop = false;                           //keep palette from stealing focus from canvas
 
-            //ui
+            //open/close button at top right corner
             btnOpen = new Button();
             btnOpen.FlatStyle = FlatStyle.System;
             btnOpen.Text = "<";
@@ -62,6 +62,7 @@ namespace Transonic.Patch
             paletteToolTip = new ToolTip();
             paletteToolTip.SetToolTip(btnOpen, "open / close palette");
             
+            //scrollbar on right
             scrollbar = new VScrollBar();
             scrollbar.Minimum = 0;
             scrollbar.Dock = DockStyle.Right;
@@ -69,11 +70,13 @@ namespace Transonic.Patch
             scrollbar.ValueChanged += new EventHandler(scrollbar_ValueChanged);
             this.Controls.Add(scrollbar);
 
+            //set sizes
             btnOpen.Size = new System.Drawing.Size(scrollbar.Width, scrollbar.Width);
             btnOpen.Location = new System.Drawing.Point(this.Width - scrollbar.Width, 0);
             buttonWidth = btnOpen.Width;
             isOpen = true;
 
+            //set panel space on left of scroll bar
             panelSpace = new Panel();
             panelSpace.BackColor = PALETTECOLOR;
             panelSpace.Location = new Point(0, 0);
@@ -197,15 +200,15 @@ namespace Transonic.Patch
     }
 
     //for future organization
-    public class PaletteGroup
+    public class PaletteGroup : PaletteItem
     {
-        public String name;
         public List<PaletteItem> items;
+        bool isOpen;
 
-        public PaletteGroup(String _name)
+        public PaletteGroup(String name) : base(name)
         {
-            name = _name;
             items = new List<PaletteItem>();
+            isOpen = false;
         }
 
         public void addItem(PaletteItem item)
