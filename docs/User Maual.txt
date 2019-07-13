@@ -1,0 +1,32 @@
+PatchWorker User Manual outline
+-------------------------------
+Introduction
+
+User Interface
+  control panel
+  canvas
+  palette
+
+Setting up the palette 
+  input / output units
+  modifier units
+
+Patching
+  loading
+  saving
+
+Filtering
+
+Transposing
+
+Other Features
+  canvas hiding
+  panic button
+
+Contact
+  upgrades
+  bug reporting
+  feature requests   
+
+Appendix A : Configuration File
+
