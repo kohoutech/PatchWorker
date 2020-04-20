@@ -41,13 +41,14 @@
     <SignManifests>false</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Icon1.ico</ApplicationIcon>
+    <ApplicationIcon>patchworker.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>Kohoutech.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>F3781300146B39D8E8AAF4B1A359B6BF6598132F</ManifestCertificateThumbprint>
@@ -167,8 +168,6 @@
     <EmbeddedResource Include="Widget\KeyboardBar.resx">
       <DependentUpon>KeyboardBar.cs</DependentUpon>
     </EmbeddedResource>
-    <None Include="Kohoutech.cer" />
-    <None Include="Kohoutech.pfx" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -181,7 +180,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Icon1.ico" />
+    <Content Include="patchworker.ico" />
     <Content Include="resources\new-input.png" />
     <Content Include="resources\new-modifier.png" />
     <Content Include="resources\new-output.png" />
